@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+        toolbar.navigationIcon = resources.getDrawable(R.drawable.ic_menu)
 //        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         DaggerUiComponent.builder()
                 .apiComponent(App.getNetComponent())
