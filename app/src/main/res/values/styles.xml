@@ -1,0 +1,19 @@
+<resources>
+
+    <!-- Base application theme. DarkActionBar -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">#00bcd4</item>
+        <item name="colorPrimaryDark">#00bcd4</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!--<style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">-->
+    <!--<item name="android:statusBarColor">@color/transparent</item>-->
+    <!--&lt;!&ndash;<item name="android:windowLightStatusBar" tools:targetApi="m">true</item>&ndash;&gt;-->
+    <!--<item name="android:windowBackground">@drawable/splash_screen_drawable</item>-->
+    <!--&lt;!&ndash;<item name="icon_color">@color/white</item> &lt;!&ndash; to display the icons properly since this theme is the default &ndash;&gt;&ndash;&gt;-->
+    <!--</style>-->
+
+
+</resources>
