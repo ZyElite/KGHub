@@ -6,7 +6,32 @@
         <item name="colorPrimary">#00bcd4</item>
         <item name="colorPrimaryDark">#00bcd4</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <!-- 使用自定义样式-->
+        <!--<item name="drawerArrowStyle">@style/Toolbar.DrawerArrow</item>-->
+
     </style>
+
+    <!-- Toolbar 主题 -->
+    <style name="Toolbar.Theme" parent="Theme.AppCompat">
+        <!-- 返回箭头样式 -->
+        <item name="drawerArrowStyle">@style/Toolbar.DrawerArrow</item>
+        <!-- 导航栏底色 无效-->
+        <!--<item name="colorPrimary">#00bcd4</item>-->
+        <!-- Actionbar Toolbar 三点menu 颜色 -->
+        <!--<item name="colorControlNormal">#00bcd4</item>-->
+        <!--导航栏上的标题颜色-->
+        <!--<item name="android:textColorPrimary">@color/colorAccent</item>-->
+    </style>
+
+    <!-- 主页返回箭头颜色 和 动画  navigationicon -->
+    <style name="Toolbar.DrawerArrow" parent="Widget.AppCompat.DrawerArrowToggle">
+        <!-- spinBars 属性 false 和 true 定义了不同的动画效果 -->
+        <item name="spinBars">false</item>
+        <!-- 設定 drawer arrow 的顏色 -->
+        <!--<item name="color">#FFFFFF</item>-->
+    </style>
+
 
     <!--<style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">-->
     <!--<item name="android:statusBarColor">@color/transparent</item>-->

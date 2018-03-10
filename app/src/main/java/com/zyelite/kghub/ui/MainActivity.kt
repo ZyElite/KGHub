@@ -1,7 +1,9 @@
 package com.zyelite.kghub.ui
 
 import android.os.Bundle
+import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.text.TextUtils
 import android.util.Log
 import com.zyelite.kghub.App
 import com.zyelite.kghub.R
@@ -16,38 +18,56 @@ import kotlinx.android.synthetic.main.nav_header_main.*
 import java.text.SimpleDateFormat
 import javax.inject.Inject
 
+
 class MainActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var userService: UserService;
+    lateinit var userService: UserService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
-        toolbar.navigationIcon = resources.getDrawable(R.drawable.ic_menu)
-//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        DaggerUiComponent.builder()
-                .apiComponent(App.getNetComponent())
-                .build()
-                .inject(this)
+        initToolbar()
+        inject()
+        getUserInfo()
+        nav_view_start.inflateMenu(R.menu.activity_main_drawer)
+    }
 
+    private fun getUserInfo() {
         userService.getUserInfo(true)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({
                     //执行成功
-                    val body: User = it.body() as User;
+                    val body: User = it.body() as User
                     Log.e("KGHub", body.toString())
-                    ImageUtil.circle(this, body.getAvatarUrl(), avatar);
+                    ImageUtil.circle(this, body.getAvatarUrl(), avatar)
                     userName.text = body.getLogin()
                     val format = SimpleDateFormat("yyyy-MM-dd")
-                    createTime.text = "加入时间 " + format.format(body.getCreatedAt())
+                    mail.text = if (TextUtils.isEmpty(body.getEmail())) format.format(body.getCreatedAt()) else body.getEmail()
                 }, {
                     //执行失败
                     Log.e("KGHub", "执行失败")
                 })
+    }
 
+    private fun inject() {
+        DaggerUiComponent.builder()
+                .apiComponent(App.getNetComponent())
+                .build()
+                .inject(this)
+    }
+
+    /**
+     * 初始化toolbar
+     */
+    private fun initToolbar() {
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        val mDrawerToggle = ActionBarDrawerToggle(this, mDrawerLayout, toolbar, R.string.navigation_toolbar_open, R.string.navigation_toolbar_close)
+        mDrawerToggle.syncState()
+        mDrawerToggle.isDrawerSlideAnimationEnabled = false
+        mDrawerLayout.addDrawerListener(mDrawerToggle)
     }
 
 

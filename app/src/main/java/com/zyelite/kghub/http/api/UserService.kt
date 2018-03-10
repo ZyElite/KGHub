@@ -22,4 +22,9 @@ interface UserService {
             @Header("forceNetWork") forceNetWork: Boolean
     ): Observable<Response<User>>
 
+
+    @GET("/users/{username}")
+    fun getUser(): Observable<Response<User>>
+
+
 }

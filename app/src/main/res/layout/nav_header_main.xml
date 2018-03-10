@@ -37,7 +37,7 @@
                 tools:text="KGHub" />
 
             <TextView
-                android:id="@+id/createTime"
+                android:id="@+id/mail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:lines="1"

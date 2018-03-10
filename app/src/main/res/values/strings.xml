@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">KGHub</string>
 
+
+    <string name="navigation_toolbar_open" translatable="false">navigation_toolbar_open</string>
+    <string name="navigation_toolbar_close" translatable="false">navigation_toolbar_close</string>
+
+
     <string name="user_name">用户名</string>
     <string name="password">密码</string>
     <string name="login">登录</string>
@@ -27,7 +32,7 @@
     <string name="cache_controller">缓存控制</string>
     <string name="cache_controller_desc">如果缓存可用，先加载缓存，然后从网络加载</string>
     <string name="language">语言</string>
-    <string name="logout">登出</string>
+    <string name="logout">退出</string>
     <string name="daily">每日的</string>
     <string name="weekly">每周的</string>
     <string name="monthly">每月的</string>
