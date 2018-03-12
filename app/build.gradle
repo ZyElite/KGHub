@@ -8,6 +8,9 @@ apply plugin: 'kotlin-kapt'
 
 apply plugin: 'com.novoda.build-properties'
 
+//realm 轻量级数据库
+apply plugin: 'realm-android'
+
 buildProperties {
     getPublic {
         file rootProject.file('public.properties')
@@ -83,6 +86,10 @@ android {
 //解决 kotlin 与 databinding或dagger2 兼容
 kapt {
     generateStubs = true
+}
+//realm 数据库
+realm {
+    syncEnabled = true
 }
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

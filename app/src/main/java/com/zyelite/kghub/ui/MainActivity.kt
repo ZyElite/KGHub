@@ -5,6 +5,8 @@ import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.util.Log
+import android.view.Menu
+import android.widget.Toast
 import com.zyelite.kghub.App
 import com.zyelite.kghub.R
 import com.zyelite.kghub.dagger.component.DaggerUiComponent
@@ -24,15 +26,42 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var userService: UserService
 
+    var isOpen = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initToolbar()
         inject()
         getUserInfo()
-        nav_view_start.inflateMenu(R.menu.activity_main_drawer)
+        initMenu()
     }
 
+
+    /**
+     * 初始化左边菜单栏
+     */
+    private fun initMenu() {
+        nav_view_start.inflateMenu(R.menu.activity_main_drawer)
+        nav_view_start.setNavigationItemSelectedListener({
+            Toast.makeText(this, it.title, Toast.LENGTH_SHORT).show()
+            it.isCheckable = true
+            true
+        })
+    }
+
+    private fun initMenuGroup() {
+        val menu = nav_view_start.menu
+        menu.setGroupVisible(R.id.my_account, isOpen)
+        menu.setGroupVisible(R.id.manage_accounts, isOpen)
+        menu.setGroupVisible(R.id.my, !isOpen)
+        menu.setGroupVisible(R.id.repositories, !isOpen)
+        menu.setGroupVisible(R.id.search, !isOpen)
+        menu.setGroupVisible(R.id.setting, !isOpen)
+    }
+
+    /**
+     * 获取用户信息
+     */
     private fun getUserInfo() {
         userService.getUserInfo(true)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -51,6 +80,9 @@ class MainActivity : AppCompatActivity() {
                 })
     }
 
+    /**
+     * dagger2 注入
+     */
     private fun inject() {
         DaggerUiComponent.builder()
                 .apiComponent(App.getNetComponent())
@@ -68,7 +100,28 @@ class MainActivity : AppCompatActivity() {
         mDrawerToggle.syncState()
         mDrawerToggle.isDrawerSlideAnimationEnabled = false
         mDrawerLayout.addDrawerListener(mDrawerToggle)
+
     }
 
+
+    /**
+     * 左边菜单创建时
+     */
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        toggle_account_bn.setOnClickListener {
+            isOpen = !isOpen
+            toggle_account_bn.setImageResource(if (isOpen) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_drop_down)
+            initMenuGroup()
+        }
+        return true
+    }
+
+    /**
+     * 左边菜单展示时
+     */
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        initMenuGroup()
+        return true
+    }
 
 }
