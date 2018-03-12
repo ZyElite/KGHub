@@ -4,6 +4,7 @@ import android.app.Application
 import com.zyelite.kghub.dagger.component.ApiComponent
 import com.zyelite.kghub.dagger.component.DaggerApiComponent
 import com.zyelite.kghub.dagger.module.ApiModule
+import io.realm.Realm
 
 /**
  * @author zy
@@ -13,9 +14,8 @@ import com.zyelite.kghub.dagger.module.ApiModule
 class App : Application() {
     //初始化块
     init {
-        instance = this;
-
-
+        instance = this
+        Realm.init(this)
     }
 
     //声明静态变量

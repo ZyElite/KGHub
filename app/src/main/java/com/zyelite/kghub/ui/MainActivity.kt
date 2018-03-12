@@ -1,5 +1,6 @@
 package com.zyelite.kghub.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
@@ -45,6 +46,9 @@ class MainActivity : AppCompatActivity() {
         nav_view_start.setNavigationItemSelectedListener({
             Toast.makeText(this, it.title, Toast.LENGTH_SHORT).show()
             it.isCheckable = true
+            when (it.itemId) {
+                R.id.nav_profile -> startActivity(Intent(this, PersonalActivity::class.java))
+            }
             true
         })
     }
