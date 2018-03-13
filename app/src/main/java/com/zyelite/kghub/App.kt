@@ -5,6 +5,8 @@ import com.zyelite.kghub.dagger.component.ApiComponent
 import com.zyelite.kghub.dagger.component.DaggerApiComponent
 import com.zyelite.kghub.dagger.module.ApiModule
 import io.realm.Realm
+import io.realm.RealmConfiguration
+
 
 /**
  * @author zy
@@ -15,7 +17,7 @@ class App : Application() {
     //初始化块
     init {
         instance = this
-        Realm.init(this)
+
     }
 
     //声明静态变量
@@ -39,6 +41,13 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate();
+        //初始化Realm数据库
+        Realm.init(this)
+        //配置Realm数据库
+        val config = RealmConfiguration.Builder()
+                .schemaVersion(1)
+                .name(resources.getString(R.string.app_name)).build()
+        Realm.setDefaultConfiguration(config)
     }
 
 }

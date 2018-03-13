@@ -1,6 +1,7 @@
 package com.zyelite.kghub.model
 
 import com.google.gson.annotations.SerializedName
+import io.realm.RealmObject
 import java.util.*
 
 /**
@@ -8,10 +9,12 @@ import java.util.*
  * @date 2018/3/8
  * @des User
  */
-class User {
-    enum class UserType {
-        User, Organization
-    }
+open class User : RealmObject() {
+
+//    @Ignore
+//    enum class UserType {
+//        User, Organization
+//    }
 
     private var login: String = ""
 
@@ -25,7 +28,7 @@ class User {
     @SerializedName("html_url")
     private var htmlUrl: String = ""
 
-    private var type: UserType = UserType.User
+    //private var type: UserType = UserType.User
 
     private var company: String = ""
 
@@ -93,13 +96,13 @@ class User {
         this.htmlUrl = htmlUrl
     }
 
-    fun getType(): UserType {
-        return type
-    }
-
-    fun setType(type: UserType) {
-        this.type = type
-    }
+//    fun getType(): UserType {
+//        return type
+//    }
+//
+//    fun setType(type: UserType) {
+//        this.type = type
+//    }
 
     fun getCompany(): String {
         return company
@@ -189,8 +192,8 @@ class User {
         this.updatedAt = updatedAt
     }
 
-    fun isUser(): Boolean {
-        return UserType.User == type
-    }
+//    fun isUser(): Boolean {
+//        return UserType.User == type
+//    }
 
 }

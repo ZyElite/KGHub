@@ -16,6 +16,7 @@ import com.zyelite.kghub.model.User
 import com.zyelite.kghub.utils.ImageUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
 import java.text.SimpleDateFormat
@@ -78,6 +79,24 @@ class MainActivity : AppCompatActivity() {
                     userName.text = body.getLogin()
                     val format = SimpleDateFormat("yyyy-MM-dd")
                     mail.text = if (TextUtils.isEmpty(body.getEmail())) format.format(body.getCreatedAt()) else body.getEmail()
+
+                    val realm = Realm.getDefaultInstance()
+                    //开启异步事物
+                    realm.executeTransactionAsync({ bgRealm ->
+                        val user = bgRealm.createObject(User::class.java)
+                        user.setName(body.getLogin())
+//                        user.setEmail(body.getEmail())
+                        user.setAvatarUrl(body.getAvatarUrl())
+                      //  user.setType(body.getType())
+                        user.setCreatedAt(body.getCreatedAt()!!)
+                    }, {
+                        Log.e("realm", "执行成功")
+                        // Transaction was a success.
+                    }) {
+                        Log.e("realm", it.message)
+                        // Transaction failed and was automatically canceled.
+                    }
+
                 }, {
                     //执行失败
                     Log.e("KGHub", "执行失败")
