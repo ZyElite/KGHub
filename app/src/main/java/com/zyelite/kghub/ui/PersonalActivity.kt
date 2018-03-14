@@ -2,6 +2,7 @@ package com.zyelite.kghub.ui
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import com.zyelite.kghub.R
 import com.zyelite.kghub.model.User
 import com.zyelite.kghub.utils.ImageUtil
@@ -21,13 +22,13 @@ class PersonalActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener({
             finish()
         })
-
         val realm = Realm.getDefaultInstance()
         val request = realm.where(User::class.java)
         val user = request.findFirst()
+        Log.e("asd",user.toString())
         if (user != null) {
             ImageUtil.circle(this, user.getAvatarUrl(), avatar)
-            toolbar.title = user.getLogin()
+            supportActionBar?.title = user.getName()
         }
     }
 }

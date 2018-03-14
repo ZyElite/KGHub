@@ -84,7 +84,8 @@ class MainActivity : AppCompatActivity() {
                     //开启异步事物
                     realm.executeTransactionAsync({ bgRealm ->
                         val user = bgRealm.createObject(User::class.java)
-                        user.setName(body.getLogin())
+                        user.setLogin(body.getLogin())
+                     //   user.setName(body.getLogin())
 //                        user.setEmail(body.getEmail())
                         user.setAvatarUrl(body.getAvatarUrl())
                       //  user.setType(body.getType())
