@@ -49,6 +49,7 @@ ext {
 
     //retrofit2
     libRetrofit = "com.squareup.retrofit2:retrofit:${RetrofitVersion}"
+    libConverterJackson = "com.squareup.retrofit2:converter-jackson:${RetrofitVersion}"
     libConverterGson = "com.squareup.retrofit2:converter-gson:${RetrofitVersion}"
     libConverterScalars = "com.squareup.retrofit2:converter-scalars:${RetrofitVersion}"
     libAdapterRxjava2 = "com.squareup.retrofit2:adapter-rxjava2:${RetrofitVersion}"

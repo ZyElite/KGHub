@@ -113,7 +113,11 @@ dependencies {
     implementation parent.ext.LibKotlin;
 
     implementation parent.ext.libRetrofit;
+    //转换为json
+    implementation parent.ext.libConverterJackson;
+    //转换为对象
     implementation parent.ext.libConverterGson;
+    //转换为字符串
     implementation parent.ext.libConverterScalars;
     implementation parent.ext.libAdapterRxjava2;
     implementation parent.ext.libOkhttp3;

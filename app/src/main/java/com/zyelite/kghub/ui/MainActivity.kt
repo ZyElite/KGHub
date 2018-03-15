@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         initToolbar()
         inject()
+        //TODO 当个人信息为空时 请求个人信息
         getUserInfo()
         initMenu()
     }
@@ -83,13 +84,16 @@ class MainActivity : AppCompatActivity() {
                     val realm = Realm.getDefaultInstance()
                     //开启异步事物
                     realm.executeTransactionAsync({ bgRealm ->
-                        val user = bgRealm.createObject(User::class.java)
-                        user.setLogin(body.getLogin())
-                     //   user.setName(body.getLogin())
-//                        user.setEmail(body.getEmail())
-                        user.setAvatarUrl(body.getAvatarUrl())
-                      //  user.setType(body.getType())
-                        user.setCreatedAt(body.getCreatedAt()!!)
+                        bgRealm.deleteAll()
+                        var user = bgRealm.where(User::class.java).findFirst()
+                        bgRealm.insert(body)
+                       // if (user == null) {
+                         //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
+//                            user?.setLogin(body.getLogin())
+//                            // user.setEmail(body.getEmail())
+//                            user?.setAvatarUrl(body.getAvatarUrl())
+//                            user?.setCreatedAt(body.getCreatedAt()!!)
+                      //  }
                     }, {
                         Log.e("realm", "执行成功")
                         // Transaction was a success.

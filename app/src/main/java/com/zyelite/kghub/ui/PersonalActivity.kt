@@ -28,7 +28,7 @@ class PersonalActivity : AppCompatActivity() {
         Log.e("asd",user.toString())
         if (user != null) {
             ImageUtil.circle(this, user.getAvatarUrl(), avatar)
-            supportActionBar?.title = user.getName()
+            supportActionBar?.title = user.getLogin()
         }
     }
 }
