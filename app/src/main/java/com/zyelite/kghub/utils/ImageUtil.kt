@@ -16,13 +16,13 @@ object ImageUtil {
      *加载圆形图片 从缓存拿
      */
     fun circle(context: Context, url: String, img: ImageView) {
-        Glide.with(context).load(url).apply(RequestOptions.circleCropTransform().onlyRetrieveFromCache(true)).into(img)
+        Glide.with(context).load(url).apply(RequestOptions.circleCropTransform().onlyRetrieveFromCache(false)).into(img)
     }
 
     /**
      *加载图片 从缓存拿
      */
     fun load(context: Context, url: String, img: ImageView) {
-        Glide.with(context).load(url).apply(RequestOptions().onlyRetrieveFromCache(true)).into(img)
+        Glide.with(context).load(url).apply(RequestOptions().onlyRetrieveFromCache(false)).into(img)
     }
 }

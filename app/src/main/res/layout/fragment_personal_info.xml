@@ -2,6 +2,7 @@
 
 <android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/scroll_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -33,7 +34,8 @@
                     android:id="@+id/repo_title_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="18sp" />
+                    android:textSize="18sp"
+                    tools:text="ZyElite" />
 
                 <TextView
                     android:id="@+id/fork_info_text"
@@ -47,17 +49,13 @@
                     android:id="@+id/repo_desc_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_mini"
                     android:textColor="?android:textColorSecondary"
-                    android:textSize="@dimen/text_small"
                     android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/repo_created_info_text"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/spacing_mini"
-                    android:textSize="@dimen/text_small" />
+                    android:layout_height="wrap_content" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -68,7 +66,6 @@
                         android:id="@+id/issues_lay"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_margin="@dimen/spacing_mini"
                         android:layout_weight="1"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:gravity="center"
@@ -78,21 +75,18 @@
                             android:id="@+id/issues_num_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text=""
-                            android:textSize="@dimen/text_large" />
+                            tools:text="0" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/issues"
-                            android:textSize="@dimen/text_mini" />
+                            android:text="@string/issues" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/stargazers_lay"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_margin="@dimen/spacing_mini"
                         android:layout_weight="1"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:gravity="center"
@@ -102,45 +96,39 @@
                             android:id="@+id/stargazers_num_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text=""
-                            android:textSize="@dimen/text_large" />
+                            tools:text="0" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/stargazers"
-                            android:textSize="@dimen/text_mini" />
+                            android:text="@string/stargazers" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/froks_lay"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_margin="@dimen/spacing_mini"
                         android:layout_weight="1"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:gravity="center"
-                        android:orientation="vertical">
+                        android:orientation="vertical">F
 
                         <TextView
                             android:id="@+id/forks_num_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text=""
-                            android:textSize="@dimen/text_large" />
+                            tools:text="0" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/forks"
-                            android:textSize="@dimen/text_mini" />
+                            android:text="@string/forks" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/watchers_lay"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_margin="@dimen/spacing_mini"
                         android:layout_weight="1"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:gravity="center"
@@ -150,68 +138,16 @@
                             android:id="@+id/watchers_num_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text=""
-                            android:textSize="@dimen/text_large" />
+                            tools:text="0" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/watchers"
-                            android:textSize="@dimen/text_mini" />
+                            android:text="@string/watchers" />
                     </LinearLayout>
                 </LinearLayout>
-
             </LinearLayout>
 
         </android.support.v7.widget.CardView>
-
-        <android.support.v7.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/card_view_vertical_margin"
-            android:layout_marginEnd="@dimen/card_view_horizontal_margin"
-            android:layout_marginStart="@dimen/card_view_horizontal_margin"
-            android:layout_marginTop="@dimen/card_view_vertical_margin"
-            android:background="?card_background"
-            app:cardBackgroundColor="?card_background"
-            app:cardCornerRadius="@dimen/card_view_corner_radius"
-            app:contentPaddingBottom="@dimen/spacing_normal"
-            app:contentPaddingTop="@dimen/spacing_normal">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/readme_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/spacing_mini"
-                    android:layout_marginStart="@dimen/spacing_normal"
-                    android:text="@string/readme"
-                    android:textColor="?android:colorAccent"
-                    android:textSize="@dimen/text_large" />
-
-                <com.thirtydegreesray.openhub.ui.widget.webview.CodeWebView
-                    android:id="@+id/web_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/readme_title"
-                    app:webview_background="?card_background" />
-
-                <ProgressBar
-                    android:id="@+id/readme_loader"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/readme_title"
-                    android:layout_gravity="top"
-                    android:indeterminate="false"
-                    android:paddingEnd="@dimen/spacing_large"
-                    android:paddingStart="@dimen/spacing_large" />
-            </RelativeLayout>
-
-        </android.support.v7.widget.CardView>
-
     </LinearLayout>
 </android.support.v4.widget.NestedScrollView>

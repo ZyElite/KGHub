@@ -106,7 +106,7 @@
     <string name="fork_tag">分支</string>
     <string name="fork_warning_msg">创建版本库分支？</string>
     <string name="forked">已创建版本库分支</string>
-    <string name="forks">版本库分支</string>
+    <string name="forks">仓库</string>
     <string name="forked_from">版本库分支从</string>
     <string name="gists">主题帖</string>
     <string name="upgrade">升级</string>
