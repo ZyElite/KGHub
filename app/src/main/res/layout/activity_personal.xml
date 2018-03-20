@@ -48,10 +48,19 @@
                     tools:src="@mipmap/ic_launcher" />
 
                 <TextView
+                    android:layout_marginTop="18dp"
                     android:id="@+id/joinTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="84dp"
+                    tools:text="2018-01-01" />
+
+
+                <TextView
+                    android:id="@+id/updateTime"
+                    android:layout_below="@id/joinTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_marginLeft="84dp"
                     tools:text="2018-01-01" />
             </RelativeLayout>

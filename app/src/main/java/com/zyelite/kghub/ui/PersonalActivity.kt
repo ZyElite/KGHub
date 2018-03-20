@@ -13,7 +13,7 @@ import com.zyelite.kghub.fragment.CommitsFragment
 import com.zyelite.kghub.fragment.PersonalInfoFragment
 import com.zyelite.kghub.fragment.StarredFragment
 import com.zyelite.kghub.fragment.base.BaseFragment
-import com.zyelite.kghub.model.User
+import com.zyelite.kghub.model.UserModel
 import com.zyelite.kghub.utils.ImageUtil
 import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_personal.*
@@ -34,7 +34,7 @@ class PersonalActivity : AppCompatActivity() {
             finish()
         })
         val realm = Realm.getDefaultInstance()
-        val request = realm.where(User::class.java)
+        val request = realm.where(UserModel::class.java)
         val user = request.findFirst()
         Log.e("asd", user.toString())
         if (user != null) {
@@ -43,6 +43,7 @@ class PersonalActivity : AppCompatActivity() {
             supportActionBar?.title = user.getLogin()
             val format = SimpleDateFormat("yyyy-MM-dd")
             joinTime.text = "加入时间：" + format.format(user.getCreatedAt())
+            updateTime.text = "最后更新时间：" + format.format(user.getUpdatedAt())
         }
         val pageList = ArrayList<BaseFragment>()
         pageList.add(PersonalInfoFragment())

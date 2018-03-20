@@ -14,6 +14,8 @@ import io.realm.RealmConfiguration
  * @des App
  */
 class App : Application() {
+
+
     //初始化块
     init {
         instance = this

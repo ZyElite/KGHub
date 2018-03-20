@@ -1,6 +1,7 @@
 package com.zyelite.kghub.fragment.base
 
 import android.support.v4.app.Fragment
+import io.realm.Realm
 
 /**
  * @author zy
@@ -9,5 +10,5 @@ import android.support.v4.app.Fragment
  */
 open class BaseFragment : Fragment() {
     open var title = ""
-
+    var realm = Realm.getDefaultInstance()
 }

@@ -6,6 +6,8 @@
     <string name="navigation_toolbar_close" translatable="false">navigation_toolbar_close</string>
 
 
+    <string name="public_gists">公开仓库</string>
+
     <string name="user_name">用户名</string>
     <string name="password">密码</string>
     <string name="login">登录</string>
@@ -245,7 +247,7 @@
     <string name="star_me">星标我</string>
     <string name="star_next_time">继续努力</string>
     <string name="owner_repo">自己的</string>
-    <string name="public_repo">公开的</string>
+    <string name="public_repo">版本库</string>
     <string name="private_repo">私有的</string>
     <string name="member_repo">会员</string>
     <string name="most_pushed">最多提交的</string>

@@ -12,7 +12,7 @@ import com.zyelite.kghub.App
 import com.zyelite.kghub.R
 import com.zyelite.kghub.dagger.component.DaggerUiComponent
 import com.zyelite.kghub.http.api.UserService
-import com.zyelite.kghub.model.User
+import com.zyelite.kghub.model.UserModel
 import com.zyelite.kghub.utils.ImageUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
                 .subscribeOn(Schedulers.io())
                 .subscribe({
                     //执行成功
-                    val body: User = it.body() as User
+                    val body: UserModel = it.body() as UserModel
                     Log.e("KGHub", body.toString())
                     ImageUtil.circle(this, body.getAvatarUrl(), avatar)
                     userName.text = body.getLogin()
@@ -85,15 +85,14 @@ class MainActivity : AppCompatActivity() {
                     //开启异步事物
                     realm.executeTransactionAsync({ bgRealm ->
                         bgRealm.deleteAll()
-                        var user = bgRealm.where(User::class.java).findFirst()
                         bgRealm.insert(body)
-                       // if (user == null) {
-                         //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
+                        // if (user == null) {
+                        //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
 //                            user?.setLogin(body.getLogin())
 //                            // user.setEmail(body.getEmail())
 //                            user?.setAvatarUrl(body.getAvatarUrl())
 //                            user?.setCreatedAt(body.getCreatedAt()!!)
-                      //  }
+                        //  }
                     }, {
                         Log.e("realm", "执行成功")
                         // Transaction was a success.

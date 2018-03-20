@@ -7,9 +7,9 @@ import java.util.*
 /**
  * @author zy
  * @date 2018/3/8
- * @des User
+ * @des UserModel
  */
-open class User : RealmObject() {
+open class UserModel : RealmObject() {
 
 //    @Ignore
 //    enum class UserType {
@@ -20,16 +20,19 @@ open class User : RealmObject() {
 
     private var id: String = ""
 
+
     private var name: String = ""
 
     @SerializedName("avatar_url")
     private var avatarUrl: String = ""
 
+    //个人主页
     @SerializedName("html_url")
     private var htmlUrl: String = ""
 
     //private var type: UserType = UserType.User
 
+    //公司
     private var company: String = ""
 
     private var blog: String = ""
@@ -40,21 +43,32 @@ open class User : RealmObject() {
 
     private var bio: String = ""
 
+    //个人仓库
     @SerializedName("public_repos")
     private var publicRepos: Int = 0
 
+    //
     @SerializedName("public_gists")
     private var publicGists: Int = 0
 
+    //追随者
     private var followers: Int = 0
 
+    //跟随
     private var following: Int = 0
 
+    //创建时间
     @SerializedName("created_at")
     private var createdAt: Date? = null
 
+    //更新时间
     @SerializedName("updated_at")
     private var updatedAt: Date? = null
+
+
+
+
+
 
     fun getLogin(): String {
         return login

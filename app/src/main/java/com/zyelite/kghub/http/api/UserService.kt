@@ -1,6 +1,6 @@
 package com.zyelite.kghub.http.api
 
-import com.zyelite.kghub.model.User
+import com.zyelite.kghub.model.UserModel
 import io.reactivex.Observable
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -21,11 +21,11 @@ interface UserService {
     @GET("user")
     fun getUserInfo(
             @Header("forceNetWork") forceNetWork: Boolean
-    ): Observable<Response<User>>
+    ): Observable<Response<UserModel>>
 
 
     @GET("/users/{username}")
-    fun getUser(): Observable<Response<User>>
+    fun getUser(): Observable<Response<UserModel>>
 
 
     @GET("user/following/{user}")
@@ -57,14 +57,14 @@ interface UserService {
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("user") user: String,
             @Query("page") page: Int
-    ): Observable<Response<ArrayList<User>>>
+    ): Observable<Response<ArrayList<UserModel>>>
 
     @GET("users/{user}/following")
     fun getFollowing(
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("user") user: String,
             @Query("page") page: Int
-    ): Observable<Response<ArrayList<User>>>
+    ): Observable<Response<ArrayList<UserModel>>>
 
     /**
      * List events performed by a user
@@ -97,13 +97,13 @@ interface UserService {
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("org") org: String,
             @Query("page") page: Int
-    ): Observable<Response<ArrayList<User>>>
+    ): Observable<Response<ArrayList<UserModel>>>
 
     @GET("users/{user}/orgs")
     fun getUserOrgs(
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("user") user: String
-    ): Observable<Response<ArrayList<User>>>
+    ): Observable<Response<ArrayList<UserModel>>>
 
 
 }

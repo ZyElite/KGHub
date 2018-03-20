@@ -4,7 +4,7 @@ package com.zyelite.kghub.http.api;
 
 import android.support.annotation.NonNull;
 
-import com.zyelite.kghub.model.User;
+import com.zyelite.kghub.model.UserModel;
 
 import java.util.ArrayList;
 
@@ -157,7 +157,7 @@ public interface RepoService {
 
     @NonNull
     @GET("repos/{owner}/{repo}/stargazers")
-    Observable<Response<ArrayList<User>>> getStargazers(
+    Observable<Response<ArrayList<UserModel>>> getStargazers(
             @Header("forceNetWork") boolean forceNetWork,
             @Path(value = "owner") String owner,
             @Path(value = "repo") String repo,
@@ -166,7 +166,7 @@ public interface RepoService {
 
     @NonNull
     @GET("repos/{owner}/{repo}/subscribers")
-    Observable<Response<ArrayList<User>>> getWatchers(
+    Observable<Response<ArrayList<UserModel>>> getWatchers(
             @Header("forceNetWork") boolean forceNetWork,
             @Path("owner") String owner,
             @Path("repo") String repo,
