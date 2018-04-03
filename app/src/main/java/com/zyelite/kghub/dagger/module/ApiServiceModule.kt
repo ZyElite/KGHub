@@ -1,5 +1,6 @@
 package com.zyelite.kghub.dagger.module
 
+import com.zyelite.kghub.http.api.EventService
 import com.zyelite.kghub.http.api.LoginService
 import com.zyelite.kghub.http.api.UserService
 import dagger.Module
@@ -24,4 +25,8 @@ class ApiServiceModule {
         return retrofit.create(UserService::class.java)
     }
 
+    @Provides
+    fun provideEvent(retrofit: Retrofit): EventService {
+        return retrofit.create(EventService::class.java)
+    }
 }

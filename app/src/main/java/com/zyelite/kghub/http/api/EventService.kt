@@ -12,10 +12,10 @@ import java.util.*
 /**
  * @author ZyElite
  * @create 2018/4/3
- * @description ActivityService
+ * @description EventService
  */
 
-interface ActivityService {
+interface EventService {
     /**
      *
      * 自己提交的所有事件
