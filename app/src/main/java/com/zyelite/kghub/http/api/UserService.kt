@@ -66,6 +66,10 @@ interface UserService {
             @Query("page") page: Int
     ): Observable<Response<ArrayList<UserModel>>>
 
+
+
+
+
     /**
      * List events performed by a user
      */

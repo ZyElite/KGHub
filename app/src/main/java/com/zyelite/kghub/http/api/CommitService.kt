@@ -1,20 +1,36 @@
 package com.zyelite.kghub.http.api
 
+import com.zyelite.kghub.model.CommitsResModel
+import io.reactivex.Observable
+import io.reactivex.annotations.NonNull
+import retrofit2.Response
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Path
+import retrofit2.http.Query
+
 /**
  * Created by ThirtyDegreesRay on 2017/10/17 13:13:33
  */
 
-interface CommitService
-//    @NonNull
-//    @GET("repos/{owner}/{repo}/commits")
-//    Observable<Response<ArrayList<RepoCommit>>> getRepoCommits(
-//            @Header("forceNetWork") boolean forceNetWork,
-//            @Path("owner") String owner,
-//            @Path("repo") String repo,
-//            //SHA or branch to start listing commits from. Default: the repository’s default branch (usually master).
-//            @Query("sha") String branch,
-//            @Query("page") int page
-//    );
+interface CommitService {
+
+    /**
+     * 获取分支的所有提交
+     */
+    @NonNull
+    @GET("repos/{owner}/{repo}/commits")
+    fun getRepoCommits(
+            @Header("forceNetWork") forceNetWork: Boolean,
+            @Path("owner") owner: String,
+            @Path("repo") repo: String,
+            @Query("sha") branch: String,
+            @Query("page") page: Int
+    ): Observable<Response<ArrayList<CommitsResModel>>>
+
+
+}
+
 //    @NonNull
 //    @GET("repos/{owner}/{repo}/commits/{sha}")
 //    Observable<Response<RepoCommitExt>> getCommitInfo(
