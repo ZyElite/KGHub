@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -23,9 +22,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
             android:layout_marginStart="12dp"
-            android:orientation="vertical"
-            android:layout_marginLeft="12dp">
+            android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -37,7 +36,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="ZyElite"
-                    android:textColor="?colorAccent"
                     android:textSize="16sp" />
 
                 <TextView
@@ -50,7 +48,6 @@
                     android:layout_weight="1"
                     android:gravity="right"
                     android:text="14天前"
-                    android:textColor="?android:textColorSecondary"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -87,8 +84,7 @@
 
                     <android.support.v7.widget.AppCompatImageView
                         android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        app:srcCompat="12dp" />
+                        android:layout_height="12dp" />
 
                     <TextView
                         android:id="@+id/comment_num"

@@ -37,22 +37,21 @@ class CommitsFragment : BaseFragment() {
                 .apiComponent(App.getNetComponent())
                 .build()
                 .inject(this)
-
+        initData()
     }
 
     fun initData() {
         val commitsAdapter = CommitsAdapter()
         recycleView.adapter = commitsAdapter
-        eventService.getUserEvents(true, "ZyElite", 60)
+        eventService.getUserEvents(true, "ZyElite", 1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({
-                    Log.e("asd","成功")
                     if (it.isSuccessful) {
-
+                        commitsAdapter.replace(it.body()!!)
                     }
                 }, {
-                    Log.e("asd","失败")
+                    Log.e("KGHub", "失败")
                 })
     }
 }

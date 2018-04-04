@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="4dp"
-    android:layout_marginTop="4dp">
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp"
+    android:layout_marginTop="4dp"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardCornerRadius="3dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,6 +21,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <android.support.v7.widget.AppCompatImageView
@@ -29,34 +35,40 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="12dp"
                 android:layout_marginStart="12dp"
-                android:gravity="center_vertical"
-                android:textColor="?colorAccent"
-                android:textSize="16sp"
-                tools:text="ZyElite" />
+                android:textSize="14sp"
+                tools:Text="KGHub" />
 
             <TextView
                 android:id="@+id/time"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top"
-                android:layout_marginLeft="4dp"
-                android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:gravity="end"
+                android:gravity="right"
+                android:textColor="?android:textColorSecondary"
                 android:textSize="12sp"
-                tools:text="15天前" />
+                tools:ignore="RtlHardcoded" />
         </LinearLayout>
 
         <TextView
-            android:id="@+id/comment_desc"
+            android:id="@+id/action"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="20"
-            android:paddingTop="8dp"
-            android:textSize="14sp"
-            tools:text="测试" />
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="8dp"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp"
+            android:maxLines="4"
+            android:textColor="?android:textColorSecondary"
+            android:textSize="14sp" />
     </LinearLayout>
 
-</LinearLayout>
+</android.support.v7.widget.CardView>
