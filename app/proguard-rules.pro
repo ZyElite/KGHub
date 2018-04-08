@@ -617,7 +617,7 @@ public static java.lang.String TABLENAME;
 -dontwarn javax.xml.stream.**
 -dontwarn com.fasterxml.jackson.**
 
-
+-keep class io.realm.exceptions.* { *; }
 #-libraryjars ../app/libs/armeabi/libmarsstn.so
 #-libraryjars ../app/libs/armeabi/libmarsxlog.so
 #-libraryjars ../app/libs/armeabi/libstlport_shared.so

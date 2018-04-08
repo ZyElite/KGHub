@@ -1,5 +1,6 @@
 package com.zyelite.kghub.http.api
 
+import com.zyelite.kghub.model.User
 import com.zyelite.kghub.model.UserModel
 import io.reactivex.Observable
 import okhttp3.ResponseBody
@@ -23,6 +24,14 @@ interface UserService {
             @Header("forceNetWork") forceNetWork: Boolean
     ): Observable<Response<UserModel>>
 
+    /**
+     * 获取登录用户信息
+     */
+
+    @GET("user")
+    fun getUserInfo1(
+            @Header("forceNetWork") forceNetWork: Boolean
+    ): Observable<Response<User>>
 
     @GET("/users/{username}")
     fun getUser(): Observable<Response<UserModel>>
@@ -65,9 +74,6 @@ interface UserService {
             @Path("user") user: String,
             @Query("page") page: Int
     ): Observable<Response<ArrayList<UserModel>>>
-
-
-
 
 
     /**

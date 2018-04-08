@@ -1,4 +1,4 @@
-def SupportVersion = "27.0.2"
+def SupportVersion = "27.1.0"
 def ConstraintLayout = "1.0.2"
 
 def RetrofitVersion = "2.3.0"
@@ -24,7 +24,7 @@ def EventBusVersion = "3.1.1"
 
 def GreenDaoVersion = "3.2.2"
 
-def MultiDexVersion = "1.0.1"
+def MultiDexVersion = "1.0.2"
 
 def GsonVersion = "2.8.2"
 

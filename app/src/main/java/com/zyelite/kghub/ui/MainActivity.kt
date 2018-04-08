@@ -10,8 +10,10 @@ import android.view.Menu
 import android.widget.Toast
 import com.zyelite.kghub.App
 import com.zyelite.kghub.R
+import com.zyelite.kghub.annotations.UserType
 import com.zyelite.kghub.dagger.component.DaggerUiComponent
 import com.zyelite.kghub.http.api.UserService
+import com.zyelite.kghub.model.User
 import com.zyelite.kghub.model.UserModel
 import com.zyelite.kghub.utils.ImageUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -69,6 +71,45 @@ class MainActivity : AppCompatActivity() {
      * 获取用户信息
      */
     private fun getUserInfo() {
+
+        userService.getUserInfo1(true)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe({
+                    //执行成功
+                    val body: User = it.body() as User
+                 //   Log.e("KGHub", body.toString())
+                  //  ImageUtil.circle(this, body.avatarUrl, avatar)
+                  //  userName.text = body.login
+                //    val format = SimpleDateFormat("yyyy-MM-dd")
+                  //  mail.text = if (TextUtils.isEmpty(body.em())) format.format(body.getCreatedAt()) else body.getEmail()
+                    body.type = UserType.ORGANIZATION
+                    val realm = Realm.getDefaultInstance()
+                    //开启异步事物
+                    realm.executeTransactionAsync({ bgRealm ->
+                        bgRealm.deleteAll()
+                        bgRealm.insert(body)
+                        // if (user == null) {
+                        //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
+//                            user?.setLogin(body.getLogin())
+//                            // user.setEmail(body.getEmail())
+//                            user?.setAvatarUrl(body.getAvatarUrl())
+//                            user?.setCreatedAt(body.getCreatedAt()!!)
+                        //  }
+                    }, {
+                        Log.e("realm", "执行成功")
+                        // Transaction was a success.
+                    }) {
+                        Log.e("realm", it.message)
+                        // Transaction failed and was automatically canceled.
+                    }
+
+                }, {
+                    //执行失败
+                    Log.e("KGHub", "执行失败")
+                })
+
+
         userService.getUserInfo(true)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())

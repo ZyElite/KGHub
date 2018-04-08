@@ -28,13 +28,13 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_login)
         DaggerUiComponent.builder()
                 .apiComponent(App.getNetComponent())
                 .build()
-                .inject(this);
+                .inject(this)
 
-        login.setOnClickListener({ login() });
+        login.setOnClickListener({ login() })
     }
 
     @SuppressLint("ShowToast")
@@ -43,7 +43,7 @@ class LoginActivity : AppCompatActivity() {
         val password = password_et.text;
         val token = Credentials.basic(username.toString(), password.toString());
         getSharedPreferences("KGHub", Context.MODE_PRIVATE).edit().putString("token", token).apply()
-        val authReqModel = AuthReqModel().generate();
+        val authReqModel = AuthReqModel().generate()
 
         loginService.authorizations(authReqModel)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -57,6 +57,7 @@ class LoginActivity : AppCompatActivity() {
                 }, {
                     Log.e("KGHub", "请求失败")
                 })
+
 
     }
 
