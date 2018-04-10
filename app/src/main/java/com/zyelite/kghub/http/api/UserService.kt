@@ -22,19 +22,11 @@ interface UserService {
     @GET("user")
     fun getUserInfo(
             @Header("forceNetWork") forceNetWork: Boolean
-    ): Observable<Response<UserModel>>
-
-    /**
-     * 获取登录用户信息
-     */
-
-    @GET("user")
-    fun getUserInfo1(
-            @Header("forceNetWork") forceNetWork: Boolean
     ): Observable<Response<User>>
 
+
     @GET("/users/{username}")
-    fun getUser(): Observable<Response<UserModel>>
+    fun getUser(): Observable<Response<User>>
 
 
     @GET("user/following/{user}")
@@ -73,7 +65,7 @@ interface UserService {
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("user") user: String,
             @Query("page") page: Int
-    ): Observable<Response<ArrayList<UserModel>>>
+    ): Observable<Response<ArrayList<User>>>
 
 
     /**
@@ -107,13 +99,13 @@ interface UserService {
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("org") org: String,
             @Query("page") page: Int
-    ): Observable<Response<ArrayList<UserModel>>>
+    ): Observable<Response<ArrayList<User>>>
 
     @GET("users/{user}/orgs")
     fun getUserOrgs(
             @Header("forceNetWork") forceNetWork: Boolean,
             @Path("user") user: String
-    ): Observable<Response<ArrayList<UserModel>>>
+    ): Observable<Response<ArrayList<User>>>
 
 
 }

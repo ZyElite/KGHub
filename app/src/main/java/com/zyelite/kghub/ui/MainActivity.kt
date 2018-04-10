@@ -1,44 +1,50 @@
 package com.zyelite.kghub.ui
 
+import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.support.v7.app.ActionBarDrawerToggle
-import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
 import android.widget.Toast
 import com.zyelite.kghub.App
 import com.zyelite.kghub.R
-import com.zyelite.kghub.annotations.UserType
+import com.zyelite.kghub.base.BaseActivity
 import com.zyelite.kghub.dagger.component.DaggerUiComponent
 import com.zyelite.kghub.http.api.UserService
 import com.zyelite.kghub.model.User
-import com.zyelite.kghub.model.UserModel
+import com.zyelite.kghub.utils.Constant
+import com.zyelite.kghub.utils.DateUtil
 import com.zyelite.kghub.utils.ImageUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
-import java.text.SimpleDateFormat
 import javax.inject.Inject
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
+
+    //侧边栏 是否打开另一组 默认不打开
+    private var isOpen = false
 
     @Inject
     lateinit var userService: UserService
 
-    var isOpen = false
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    override fun initView(): Int {
+        return R.layout.activity_main
+    }
+
+    override fun init() {
         initToolbar()
         inject()
-        //TODO 当个人信息为空时 请求个人信息
-        getUserInfo()
         initMenu()
+        //TODO 当个人信息为空时 请求个人信息
+        val name = getSharedPreferences("KGHub", Context.MODE_PRIVATE).getString(Constant.CURRENT_LOGIN, "")
+        val user = realm.where(User::class.java).equalTo("login", name).findFirst()
+        if (user == null) {
+            getUserInfo()
+        }
     }
 
 
@@ -72,61 +78,22 @@ class MainActivity : AppCompatActivity() {
      */
     private fun getUserInfo() {
 
-        userService.getUserInfo1(true)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe({
-                    //执行成功
-                    val body: User = it.body() as User
-                 //   Log.e("KGHub", body.toString())
-                  //  ImageUtil.circle(this, body.avatarUrl, avatar)
-                  //  userName.text = body.login
-                //    val format = SimpleDateFormat("yyyy-MM-dd")
-                  //  mail.text = if (TextUtils.isEmpty(body.em())) format.format(body.getCreatedAt()) else body.getEmail()
-                    body.type = UserType.ORGANIZATION
-                    val realm = Realm.getDefaultInstance()
-                    //开启异步事物
-                    realm.executeTransactionAsync({ bgRealm ->
-                        bgRealm.deleteAll()
-                        bgRealm.insert(body)
-                        // if (user == null) {
-                        //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
-//                            user?.setLogin(body.getLogin())
-//                            // user.setEmail(body.getEmail())
-//                            user?.setAvatarUrl(body.getAvatarUrl())
-//                            user?.setCreatedAt(body.getCreatedAt()!!)
-                        //  }
-                    }, {
-                        Log.e("realm", "执行成功")
-                        // Transaction was a success.
-                    }) {
-                        Log.e("realm", it.message)
-                        // Transaction failed and was automatically canceled.
-                    }
-
-                }, {
-                    //执行失败
-                    Log.e("KGHub", "执行失败")
-                })
-
-
         userService.getUserInfo(true)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({
                     //执行成功
-                    val body: UserModel = it.body() as UserModel
+                    val body: User = it.body() as User
                     Log.e("KGHub", body.toString())
-                    ImageUtil.circle(this, body.getAvatarUrl(), avatar)
-                    userName.text = body.getLogin()
-                    val format = SimpleDateFormat("yyyy-MM-dd")
-                    mail.text = if (TextUtils.isEmpty(body.getEmail())) format.format(body.getCreatedAt()) else body.getEmail()
-
-                    val realm = Realm.getDefaultInstance()
+                    ImageUtil.circle(this, body.avatarUrl, avatar)
+                    userName.text = body.login
+                    mail.text = if (TextUtils.isEmpty(body.email)) DateUtil.getDateStr(body.createdAt!!) else body.email
                     //开启异步事物
                     realm.executeTransactionAsync({ bgRealm ->
-                        bgRealm.deleteAll()
                         bgRealm.insert(body)
+                        // bgRealm.insertOrUpdate(body)
+//                        bgRealm.deleteAll()
+//                        bgRealm.insert(body)
                         // if (user == null) {
                         //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
 //                            user?.setLogin(body.getLogin())
@@ -168,7 +135,6 @@ class MainActivity : AppCompatActivity() {
         mDrawerToggle.syncState()
         mDrawerToggle.isDrawerSlideAnimationEnabled = false
         mDrawerLayout.addDrawerListener(mDrawerToggle)
-
     }
 
 

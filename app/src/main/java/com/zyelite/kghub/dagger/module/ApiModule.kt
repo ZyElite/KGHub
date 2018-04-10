@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder
 import com.zyelite.kghub.KConfig
 import com.zyelite.kghub.http.interceptor.OKHttpCacheInterceptor
 import com.zyelite.kghub.http.interceptor.OKHttpCacheNetworkInterceptor
+import com.zyelite.kghub.utils.Constant
 import dagger.Module
 import dagger.Provides
 import io.reactivex.schedulers.Schedulers
@@ -60,7 +61,7 @@ class ApiModule(private var context: Context) {
                 .addInterceptor(OKHttpCacheInterceptor())
                 .addInterceptor({
                     val string = context.getSharedPreferences("KGHub", Context.MODE_PRIVATE)
-                            .getString("token", "")
+                            .getString(Constant.TOKEN, "")
                     if (!TextUtils.isEmpty(string)) {
                         it.proceed(it.request().newBuilder().addHeader("Authorization", string).build())
                     } else {

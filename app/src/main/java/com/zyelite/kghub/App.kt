@@ -7,6 +7,7 @@ import com.zyelite.kghub.dagger.component.ApiComponent
 import com.zyelite.kghub.dagger.component.DaggerApiComponent
 import com.zyelite.kghub.dagger.module.ApiModule
 import io.realm.Realm
+import io.realm.RealmConfiguration
 
 
 /**
@@ -51,9 +52,9 @@ class App : MultiDexApplication() {
         //初始化Realm数据库
         Realm.init(this)
         //配置Realm数据库
-//        val config = RealmConfiguration.Builder()
-//                .schemaVersion(1)
-//                .name(resources.getString(R.string.app_name)).build()
-//        Realm.setDefaultConfiguration(config)
+        val config = RealmConfiguration.Builder()
+                .schemaVersion(2)
+                .name(resources.getString(R.string.app_name)).build()
+        Realm.setDefaultConfiguration(config)
     }
 }
