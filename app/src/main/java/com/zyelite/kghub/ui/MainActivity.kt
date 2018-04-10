@@ -16,10 +16,12 @@ import com.zyelite.kghub.model.User
 import com.zyelite.kghub.utils.Constant
 import com.zyelite.kghub.utils.DateUtil
 import com.zyelite.kghub.utils.ImageUtil
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -44,7 +46,14 @@ class MainActivity : BaseActivity() {
         val user = realm.where(User::class.java).equalTo("login", name).findFirst()
         if (user == null) {
             getUserInfo()
+        } else {
+            Observable.just(user)
+                    .delay(1000, TimeUnit.MILLISECONDS)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.io())
+                    .subscribe { setMenuData(it) }
         }
+
     }
 
 
@@ -77,7 +86,6 @@ class MainActivity : BaseActivity() {
      * 获取用户信息
      */
     private fun getUserInfo() {
-
         userService.getUserInfo(true)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
@@ -85,22 +93,10 @@ class MainActivity : BaseActivity() {
                     //执行成功
                     val body: User = it.body() as User
                     Log.e("KGHub", body.toString())
-                    ImageUtil.circle(this, body.avatarUrl, avatar)
-                    userName.text = body.login
-                    mail.text = if (TextUtils.isEmpty(body.email)) DateUtil.getDateStr(body.createdAt!!) else body.email
+                    setMenuData(body)
                     //开启异步事物
                     realm.executeTransactionAsync({ bgRealm ->
                         bgRealm.insert(body)
-                        // bgRealm.insertOrUpdate(body)
-//                        bgRealm.deleteAll()
-//                        bgRealm.insert(body)
-                        // if (user == null) {
-                        //   user = bgRealm.createObjectFromJson(User::class.java,body.toString())
-//                            user?.setLogin(body.getLogin())
-//                            // user.setEmail(body.getEmail())
-//                            user?.setAvatarUrl(body.getAvatarUrl())
-//                            user?.setCreatedAt(body.getCreatedAt()!!)
-                        //  }
                     }, {
                         Log.e("realm", "执行成功")
                         // Transaction was a success.
@@ -108,11 +104,17 @@ class MainActivity : BaseActivity() {
                         Log.e("realm", it.message)
                         // Transaction failed and was automatically canceled.
                     }
-
                 }, {
                     //执行失败
                     Log.e("KGHub", "执行失败")
                 })
+    }
+
+    private fun setMenuData(user: User) {
+        Log.e("asd", user.toString())
+        ImageUtil.circle(this, user.avatarUrl, avatar)
+        userName.text = user.login
+        mail.text = if (TextUtils.isEmpty(user.email)) DateUtil.getDateStr(user.createdAt!!) else user.email
     }
 
     /**

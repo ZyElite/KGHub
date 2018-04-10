@@ -41,6 +41,10 @@ open class User : RealmObject() {
     @SerializedName("public_gists")
     var publicGists: Int = 0
 
-
     var email: String = ""
+
+    override fun toString(): String {
+        return "User(login='$login', id=$id, avatarUrl='$avatarUrl', createdAt=$createdAt, updatedAt=$updatedAt, followers=$followers, following=$following, publicRepos=$publicRepos, publicGists=$publicGists, email='$email')"
+    }
+
 }
