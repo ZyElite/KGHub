@@ -1,5 +1,6 @@
 package com.zyelite.kghub.http.core
 
+import android.annotation.SuppressLint
 import java.io.IOException
 import java.io.InputStream
 import java.security.*
@@ -20,11 +21,11 @@ object HttpsUtils {
             val trustManagers = prepareTrustManager(*certificates)
             val keyManagers = prepareKeyManager(bksFile, password)
             val sslContext = SSLContext.getInstance("TLS")
-            var trustManager: X509TrustManager? = null
-            if (trustManagers != null) {
-                trustManager = MyTrustManager(this.chooseTrustManager(trustManagers)!!)
+            val trustManager: X509TrustManager?
+            trustManager = if (trustManagers != null) {
+                MyTrustManager(this.chooseTrustManager(trustManagers)!!)
             } else {
-                trustManager = UnSafeTrustManager()
+                UnSafeTrustManager()
             }
             sslContext.init(keyManagers, arrayOf<TrustManager>(trustManager), null)
             sslParams.sSLSocketFactory = sslContext.socketFactory
@@ -41,6 +42,7 @@ object HttpsUtils {
     }
 
     private class UnSafeHostnameVerifier : HostnameVerifier {
+        @SuppressLint("BadHostnameVerifier")
         override fun verify(hostname: String, session: SSLSession): Boolean {
             return true
         }
@@ -51,10 +53,12 @@ object HttpsUtils {
             return arrayOf()
         }
 
+        @SuppressLint("TrustAllX509TrustManager")
         @Throws(CertificateException::class)
         override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
         }
 
+        @SuppressLint("TrustAllX509TrustManager")
         @Throws(CertificateException::class)
         override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
         }
@@ -75,9 +79,8 @@ object HttpsUtils {
                 }
 
             }
-            var trustManagerFactory: TrustManagerFactory? = null
+            val trustManagerFactory: TrustManagerFactory? = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
 
-            trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
             trustManagerFactory!!.init(keyStore)
 
             return trustManagerFactory.trustManagers
@@ -148,6 +151,7 @@ object HttpsUtils {
         }
 
 
+        @SuppressLint("TrustAllX509TrustManager")
         @Throws(CertificateException::class)
         override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
 
