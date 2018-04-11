@@ -617,6 +617,10 @@ public static java.lang.String TABLENAME;
 -dontwarn javax.xml.stream.**
 -dontwarn com.fasterxml.jackson.**
 
+ #Gradle Retrolambda混淆规则
+ -dontwarn java.lang.invoke.*
+ -dontwarn **$$Lambda$*
+ -keep public class *extends java.lang.annotation.Annotation{}
 -keep class io.realm.exceptions.* { *; }
 #-libraryjars ../app/libs/armeabi/libmarsstn.so
 #-libraryjars ../app/libs/armeabi/libmarsxlog.so

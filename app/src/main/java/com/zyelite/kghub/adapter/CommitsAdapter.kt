@@ -115,7 +115,7 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
                     val sha = commit.sha.substring(0, 7)
                     builder.append(sha)
                     builder.setSpan(TextAppearanceSpan(mContext, R.style.text_link),
-                            lastLength, lastLength + sha.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            lastLength, lastLength + (sha.length), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                     builder.append(" ")
                     builder.append(commit.message)
                     builder.setSpan(EllipsizeLineSpan(if (i == count - 1) 0 else 0),
