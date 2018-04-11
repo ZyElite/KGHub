@@ -121,7 +121,9 @@ ext {
     // LibJavaPoet = "com.squareup:javapoet:${JavaPoetVersion}"
     // LibAutoService = "com.google.auto.service:auto-service:${AutoServiceVersion}"
     // LibAutoCommon = "com.google.auto:auto-common:${AutoCommonVersion}"
+   // LibKotlin = "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     LibKotlin = "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+//    LibKotlin = "org.jetbrains.kotlin:kotlin-stdlib-jre:$kotlin_version"
     //kotlin 与 databinding 兼容
     LibKotlinDataBinging = "com.android.databinding:compiler:${DataBindingCompiler}"
 
