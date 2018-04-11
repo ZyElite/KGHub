@@ -1,5 +1,6 @@
 package com.zyelite.kghub.fragment
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,6 +12,7 @@ import com.zyelite.kghub.adapter.CommitsAdapter
 import com.zyelite.kghub.dagger.component.DaggerUiComponent
 import com.zyelite.kghub.fragment.base.BaseFragment
 import com.zyelite.kghub.http.api.EventService
+import com.zyelite.kghub.utils.Constant
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_item_list.*
@@ -40,10 +42,12 @@ class CommitsFragment : BaseFragment() {
         initData()
     }
 
-    fun initData() {
+
+    private fun initData() {
         val commitsAdapter = CommitsAdapter()
         recycleView.adapter = commitsAdapter
-        eventService.getUserEvents(true, "ZyElite", 1)
+        val name = context!!.getSharedPreferences("KGHub", Context.MODE_PRIVATE).getString(Constant.CURRENT_LOGIN, "")
+        eventService.getUserEvents(true, name, 1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({

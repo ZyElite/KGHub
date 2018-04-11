@@ -282,12 +282,12 @@
 
     <string name="created_comment_on_commit">发表评论在 %s 的提交中</string>
     <string name="created_comment_on_issue">发表评论在问题 %d %s</string>
-    <string name="created_repo">创建 %s</string>
+    <string name="created_repo">创建项目 %s </string>
     <string name="forked_to">从 %s 创建分支 %s </string>
     <string name="starred_repo">星标 %s</string>
-    <string name="push_to">提交到分支 %s 在 %s</string>
+    <string name="push_to">提交代码到项目 %s 的 %s 分支中</string>
     <string name="created_tag_at">创建标签 %s 在 %s</string>
-    <string name="created_branch_at">创建分支 %s 在 %s</string>
+    <string name="created_branch_at">创建分支 %s 在 %s 项目中</string>
     <string name="delete_tag_at">删除标签 %s 在 %s</string>
     <string name="delete_branch_at">删除分支 %s 在 %s</string>
     <string name="published_release_at">发布版本 %s 在 %s</string>
