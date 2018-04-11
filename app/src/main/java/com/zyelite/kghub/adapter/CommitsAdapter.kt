@@ -152,7 +152,6 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
         mData.addAll(model)
     }
 
-    class CommitsHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    }
+    class CommitsHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
 }

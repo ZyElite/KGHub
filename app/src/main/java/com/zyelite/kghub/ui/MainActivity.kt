@@ -16,6 +16,7 @@ import com.zyelite.kghub.model.User
 import com.zyelite.kghub.utils.Constant
 import com.zyelite.kghub.utils.DateUtil
 import com.zyelite.kghub.utils.ImageUtil
+import com.zyelite.kghub.utils.StringUtil
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -42,7 +43,7 @@ class MainActivity : BaseActivity() {
         inject()
         initMenu()
         //TODO 当个人信息为空时 请求个人信息
-        val name = getSharedPreferences("KGHub", Context.MODE_PRIVATE).getString(Constant.CURRENT_LOGIN, "")
+        val name = getSharedPreferences(StringUtil.getString(R.string.app_name), Context.MODE_PRIVATE).getString(Constant.CURRENT_LOGIN, "")
         val user = realm.where(User::class.java).equalTo("login", name).findFirst()
         if (user == null) {
             getUserInfo()

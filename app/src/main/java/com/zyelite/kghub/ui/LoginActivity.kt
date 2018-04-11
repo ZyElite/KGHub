@@ -14,6 +14,7 @@ import com.zyelite.kghub.dagger.component.DaggerUiComponent
 import com.zyelite.kghub.http.api.LoginService
 import com.zyelite.kghub.model.AuthReqModel
 import com.zyelite.kghub.utils.Constant
+import com.zyelite.kghub.utils.StringUtil
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_login.*
@@ -42,14 +43,14 @@ class LoginActivity : AppCompatActivity() {
         val password = password_et.text
         if (!TextUtils.isEmpty(username) && !TextUtils.isEmpty(password)) {
             val token = Credentials.basic(username.toString(), password.toString())
-            getSharedPreferences("KGHub", Context.MODE_PRIVATE).edit().putString(Constant.TOKEN, token).apply()
+            getSharedPreferences(StringUtil.getString(R.string.app_name), Context.MODE_PRIVATE).edit().putString(Constant.TOKEN, token).apply()
             val authReqModel = AuthReqModel().generate()
             loginService.authorizations(authReqModel)
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.io())
                     .subscribe({ res ->
                         if (res.isSuccessful) {
-                            getSharedPreferences("KGHub", Context.MODE_PRIVATE).edit().putString(Constant.CURRENT_LOGIN, username.toString()).apply()
+                            getSharedPreferences(StringUtil.getString(R.string.app_name), Context.MODE_PRIVATE).edit().putString(Constant.CURRENT_LOGIN, username.toString()).apply()
                             startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                             finish()
                         }
