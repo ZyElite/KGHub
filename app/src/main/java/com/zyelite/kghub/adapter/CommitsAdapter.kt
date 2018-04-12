@@ -11,10 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.zyelite.kghub.R
 import com.zyelite.kghub.model.EventResModel
-import com.zyelite.kghub.model.constant.Event
-import com.zyelite.kghub.model.constant.IssuesEvent
-import com.zyelite.kghub.model.constant.MemberEvent
-import com.zyelite.kghub.model.constant.OrgBlockEvent
+import com.zyelite.kghub.model.constant.*
 import com.zyelite.kghub.utils.*
 import kotlinx.android.synthetic.main.item_commits_layout.view.*
 import java.util.*
@@ -44,7 +41,7 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
         holder.itemView.time.text = DateUtil.str2Time(mContext, resModel.createdAt)
         var builder: SpannableStringBuilder? = null
         val type = resModel.type
-        var actionStr = "测试活动"
+        var actionStr = "暂未处理事件"
         var descriptionStr = ""
         val name = resModel.repo.name
         val repoName = name.substring(name.lastIndexOf("/") + 1, name.length)
@@ -62,74 +59,31 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
                             resModel.payload.ref, resModel.repo.name)
                 }
             }
-        //Events of this type are not visible in timelines. These events are only used to trigger hooks.
-            Event.DEPLOYMENT_EVENT,
-            Event.DEPLOYMENT_STATUS_EVENT,
-                //Triggered when a new download is created.
-            Event.DOWNLOAD_EVENT,
-                //Triggered when a user follows another user.
-            Event.FOLLOW_EVENT,
-                //Triggered when a patch is applied in the Fork Queue.
-            Event.FORKAPPLY_EVENT,
-                //Triggered when a Gist is created or updated.
-            Event.GIST_EVENT,
-                //Triggered when a repository's label is created, edited, or deleted.
-            Event.LABEL_EVENT,
 
-                //Triggered when a user is added or removed from a team.
-            Event.MEMBERSHIP_EVENT,
-                //Triggered when a milestone is created, closed, opened, edited, or deleted.
-            Event.MILESTONE_EVENT,
-                //Triggered when a user is added, removed, or invited to an Organization.
-            Event.ORGANIZATION_EVENT,
-
-
-            Event.PAGE_BUILD_EVENT,
-            Event.PROJECTCARD_EVENT,
-            Event.PROJECT_COLUMN_EVENT,
-            Event.PROJECT_EVENT,
-            Event.PUBLIC_EVENT,
-            Event.PULL_REQUEST_EVENT,
-            Event.PULL_REQUEST_REVIEW_EVENT,
-            Event.PULL_REQUEST_REVIEW_COMMENT_EVENT,
-            Event.RELEASE_EVENT,
-            Event.REPOSITORY_EVENT,
-            Event.STATUS_EVENT,
-            Event.TEAM_EVENT,
-            Event.TEAM_ADD_EVENT -> {
-                holder.itemView.action.text = actionStr
+            Event.RELEASE_EVENT -> {
+                actionStr = String.format(StringUtil.getString(R.string.published_release_at),
+                        resModel.payload.release.tagName, resModel.repo.name)
+            }
+            Event.PULL_REQUEST_REVIEW_COMMENT_EVENT -> {
+                actionStr = String.format(getPullRequestReviewCommentEventStr(resModel.payload.action), resModel.repo.name)
+                descriptionStr = resModel.payload.comment.body
             }
 
+            Event.PULL_REQUEST_REVIEW_EVENT -> {
+                actionStr = String.format(getPullRequestReviewEventStr(resModel.payload.action), resModel.repo.name)
+            }
+            Event.PULL_REQUEST_EVENT -> {
+                actionStr = resModel.payload.action + " pull request " + resModel.repo.name
+            }
 
-//                case OrgBlockEvent:
-
-//                break;
-//            case ProjectCardEvent:
-//                    actionStr = action + " a project ";
-//                break;
-//            case ProjectColumnEvent:
-//                    actionStr = action + " a project ";
-//                break;
-//
-//            case ProjectEvent:
-//                    actionStr = action + " a project ";
-//                break;
-//            case PublicEvent:
-//                    actionStr = String.format(getString(R.string.made_repo_public), fullName);
-//            break;
-//                case PullRequestEvent:
-//            actionStr = action + " pull request " + model.getRepo().getFullName();
-//                break;
-//            case PullRequestReviewEvent:
-//                    String pullRequestReviewStr = getPullRequestReviewEventStr(action);
-//                actionStr = String.format(pullRequestReviewStr, fullName);
-//            break;
-//                case PullRequestReviewCommentEvent:
-//            String pullRequestCommentStr = getPullRequestReviewCommentEventStr(action);
-//                actionStr = String.format(pullRequestCommentStr, fullName);
-//            descSpan = new SpannableStringBuilder(model.getPayload().getComment().getBody());
-//                break;
-//
+            Event.PUBLIC_EVENT -> {
+                actionStr = String.format(StringUtil.getString(R.string.made_repo_public), resModel.repo.name)
+            }
+            Event.PROJECT_EVENT,
+            Event.PROJECT_COLUMN_EVENT,
+            Event.PROJECT_CARD_EVENT -> {
+                actionStr = resModel.payload.action + " a project "
+            }
 
             Event.ORG_BLOCK_EVENT -> {
                 val orgBlockEventStr: String = if (OrgBlockEvent.BLOCKED == resModel.payload.action) {
@@ -227,6 +181,36 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
                 }
             }
 
+        //Events of this type are not visible in timelines. These events are only used to trigger hooks.
+            Event.DEPLOYMENT_EVENT,
+            Event.DEPLOYMENT_STATUS_EVENT,
+                //Triggered when a new download is created.
+            Event.DOWNLOAD_EVENT,
+                //Triggered when a user follows another user.
+            Event.FOLLOW_EVENT,
+                //Triggered when a patch is applied in the Fork Queue.
+            Event.FORKAPPLY_EVENT,
+                //Triggered when a Gist is created or updated.
+            Event.GIST_EVENT,
+                //Triggered when a repository's label is created, edited, or deleted.
+            Event.LABEL_EVENT,
+
+                //Triggered when a user is added or removed from a team.
+            Event.MEMBERSHIP_EVENT,
+                //Triggered when a milestone is created, closed, opened, edited, or deleted.
+            Event.MILESTONE_EVENT,
+                //Triggered when a user is added, removed, or invited to an Organization.
+            Event.ORGANIZATION_EVENT,
+                //Represents an attempted build of a GitHub Pages site, whether successful or not.
+            Event.PAGE_BUILD_EVENT,
+                //Triggered when a release is published.
+            Event.REPOSITORY_EVENT,
+            Event.STATUS_EVENT,
+            Event.TEAM_EVENT,
+            Event.TEAM_ADD_EVENT -> {
+                holder.itemView.action.text = actionStr
+            }
+
         }
         holder.itemView.action.text = actionStr
         if (TextUtils.isEmpty(descriptionStr) && null == builder) holder.itemView.desc.visibility = View.GONE else {
@@ -246,26 +230,23 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
         mData.addAll(model)
     }
 
-//
-//    private fun getPullRequestReviewEventStr(action: String?): String {
-//        val actionType = EventPayload.PullRequestReviewEventActionType.valueOf(action)
-//        when (actionType) {
-//            submitted -> return getString(R.string.submitted_pull_request_review_at)
-//            edited -> return getString(R.string.edited_pull_request_review_at)
-//            dismissed -> return getString(R.string.dismissed_pull_request_review_at)
-//            else -> return getString(R.string.submitted_pull_request_review_at)
-//        }
-//    }
-//
-//    private fun getPullRequestReviewCommentEventStr(action: String?): String {
-//        val actionType = EventPayload.PullRequestReviewCommentEventActionType.valueOf(action)
-//        when (actionType) {
-//            created -> return getString(R.string.created_pull_request_comment_at)
-//            edited -> return getString(R.string.edited_pull_request_comment_at)
-//            deleted -> return getString(R.string.deleted_pull_request_comment_at)
-//            else -> return getString(R.string.created_pull_request_comment_at)
-//        }
-//    }
+    private fun getPullRequestReviewEventStr(action: String?): String {
+        return when (action) {
+            PullRequestReviewEvent.SUBMITTED -> StringUtil.getString(R.string.submitted_pull_request_review_at)
+            PullRequestReviewEvent.EDITED -> StringUtil.getString(R.string.edited_pull_request_review_at)
+            PullRequestReviewEvent.DISMISSED -> StringUtil.getString(R.string.dismissed_pull_request_review_at)
+            else -> StringUtil.getString(R.string.submitted_pull_request_review_at)
+        }
+    }
+
+    private fun getPullRequestReviewCommentEventStr(action: String?): String {
+        return when (action) {
+            PullRequestReviewCommentEvent.CREATED -> StringUtil.getString(R.string.created_pull_request_comment_at)
+            PullRequestReviewCommentEvent.EDITED -> StringUtil.getString(R.string.edited_pull_request_comment_at)
+            PullRequestReviewCommentEvent.DELETED -> StringUtil.getString(R.string.deleted_pull_request_comment_at)
+            else -> StringUtil.getString(R.string.created_pull_request_comment_at)
+        }
+    }
 
     private fun getMemberEventStr(action: String?): String {
         return when (action) {

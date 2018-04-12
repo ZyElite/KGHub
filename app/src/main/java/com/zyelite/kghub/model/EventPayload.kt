@@ -42,9 +42,10 @@ data class EventPayload(
 
         //OrgBlockEvent
         @SerializedName("blocked_user") var blockedUser: User = User(),
-        @SerializedName("organization") var organization: User = User()
+        @SerializedName("organization") var organization: User = User(),
 
-
+        //ReleaseEvent
+        @SerializedName("release") var release: Release = Release()
 
 
 ) {
@@ -98,6 +99,20 @@ data class EventPayload(
             @SerializedName("id") var id: Int = 0,
             @SerializedName("number") var number: Int = 0,
             @SerializedName("title") var title: String = ""
+    )
+
+
+    data class Release(
+            @SerializedName("url") var url: String = "",
+            @SerializedName("assets_url") var assetsUrl: String = "",
+            @SerializedName("upload_url") var uploadUrl: String = "",
+            @SerializedName("html_url") var htmlUrl: String = "",
+            @SerializedName("id") var id: Int = 0,
+            @SerializedName("tag_name") var tagName: String = "",
+            @SerializedName("target_commitish") var targetCommitish: String = "",
+            @SerializedName("name") var name: Any = Any(),
+            @SerializedName("draft") var draft: Boolean = false,
+            @SerializedName("author") var author: User = User()
     )
 }
 

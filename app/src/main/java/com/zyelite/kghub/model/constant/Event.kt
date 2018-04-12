@@ -43,8 +43,9 @@ object Event {
     //Triggered when a user is added, removed, or invited to an Organization.
     const val ORGANIZATION_EVENT = "OrganizationEvent"
     const val ORG_BLOCK_EVENT = "OrgBlockEvent"
+    //Represents an attempted build of a GitHub Pages site, whether successful or not.
     const val PAGE_BUILD_EVENT = "PageBuildEvent"
-    const val PROJECTCARD_EVENT = "ProjectCardEvent"
+    const val PROJECT_CARD_EVENT = "ProjectCardEvent"
     const val PROJECT_COLUMN_EVENT = "ProjectColumnEvent"
     const val PROJECT_EVENT = "ProjectEvent"
     const val PUBLIC_EVENT = "PublicEvent"
@@ -52,10 +53,15 @@ object Event {
     const val PULL_REQUEST_REVIEW_EVENT = "PullRequestReviewEvent"
     const val PULL_REQUEST_REVIEW_COMMENT_EVENT = "PullRequestReviewCommentEvent"
     const val PUSH_EVENT = "PushEvent"
+    //Triggered when a release is published.
     const val RELEASE_EVENT = "ReleaseEvent"
+    //Triggered when a repository is created, archived, unarchived, made public, or made private. Organization hooks are also triggered when a repository is deleted.
     const val REPOSITORY_EVENT = "RepositoryEvent"
+    //Triggered when the status of a Git commit changes.
     const val STATUS_EVENT = "StatusEvent"
+    //Triggered when an organization's team is created or deleted.
     const val TEAM_EVENT = "TeamEvent"
+    //Triggered when a repository is added to a team.
     const val TEAM_ADD_EVENT = "TeamAddEvent"
     const val WATCH_EVENT = "WatchEvent"
 }
