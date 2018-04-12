@@ -22,4 +22,4 @@ import com.zyelite.kghub.model.constant.IssuesEvent
         IssuesEvent.DEMILESTONED,
         IssuesEvent.CLOSED)
 @kotlin.annotation.Retention(AnnotationRetention.SOURCE) //表示注解所存活的时间,在运行时,而不会存在. class 文件.
-annotation class Issues//接口，定义新的注解类型
+annotation class Issues//接口，定义新的注解类型w
