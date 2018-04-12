@@ -1,7 +1,7 @@
 package com.zyelite.kghub.model
 
 import com.google.gson.annotations.SerializedName
-import com.zyelite.kghub.annotations.Event
+import com.zyelite.kghub.model.constant.Event
 import java.util.*
 
 
@@ -13,7 +13,6 @@ import java.util.*
 
 data class EventResModel(
         @SerializedName("id") var id: String = "",
-        @Event.Type
         @SerializedName("type") var type: String = Event.COMMIT_COMMENT_EVENT,
         @SerializedName("actor") var actor: User = User(),
         @SerializedName("repo") var repo: Repository = Repository(),
