@@ -1,28 +1,15 @@
 package com.zyelite.kghub.widget
 
-/**
- * @author ZyElite
- * @create 2018/4/16
- * @description SwipRefreshLayout
- */
-
 
 import android.content.Context
-import android.content.res.TypedArray
 import android.support.annotation.ColorInt
 import android.support.annotation.ColorRes
 import android.support.annotation.VisibleForTesting
 import android.support.v4.content.ContextCompat
-import android.support.v4.view.NestedScrollingChild
-import android.support.v4.view.NestedScrollingChildHelper
-import android.support.v4.view.NestedScrollingParent
-import android.support.v4.view.NestedScrollingParentHelper
-import android.support.v4.view.ViewCompat
-import android.support.v4.widget.CircleImageView
+import android.support.v4.view.*
 import android.support.v4.widget.CircularProgressDrawable
 import android.support.v4.widget.ListViewCompat
 import android.util.AttributeSet
-import android.util.DisplayMetrics
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -34,6 +21,12 @@ import android.view.animation.DecelerateInterpolator
 import android.view.animation.Transformation
 import android.widget.AbsListView
 import android.widget.ListView
+
+/**
+ * @author ZyElite
+ * @create 2018/4/16
+ * @description SwipRefreshLayout
+ */
 
 /**
  * The SwipeRefreshLayout should be used whenever the user can refresh the
@@ -69,29 +62,37 @@ import android.widget.ListView
  * @param context
  * @param attrs
  */
-class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs), NestedScrollingParent, NestedScrollingChild {
+open class SwipeRefreshLayout
+/**
+ * Constructor that is called when inflating SwipeRefreshLayout from XML.
+ *
+ * @param context
+ * @param attrs
+ */
+@JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs), NestedScrollingParent, NestedScrollingChild {
 
     private var mTarget: View? = null // the target of the gesture
     internal var mListener: OnRefreshListener? = null
     internal var mRefreshing = false
-    private val mTouchSlop: Int
-    private var mTotalDragDistance = -1f
+    private val mTouchSlop: Int = ViewConfiguration.get(context).scaledTouchSlop
+    private var mTotalDragDistance = -1F
 
     // If nested scrolling is enabled, the total amount that needed to be
     // consumed by this as the nested scrolling parent is used in place of the
     // overscroll determined by MOVE events in the onTouch handler
-    private var mTotalUnconsumed: Float = 0.toFloat()
+    private var mTotalUnconsumed: Float = 0F
     private val mNestedScrollingParentHelper: NestedScrollingParentHelper
     private val mNestedScrollingChildHelper: NestedScrollingChildHelper
     private val mParentScrollConsumed = IntArray(2)
     private val mParentOffsetInWindow = IntArray(2)
     private var mNestedScrollInProgress: Boolean = false
 
-    private val mMediumAnimationDuration: Int
+    private val mMediumAnimationDuration: Int = resources.getInteger(
+            android.R.integer.config_mediumAnimTime)
     internal var mCurrentTargetOffsetTop: Int = 0
 
-    private var mInitialMotionY: Float = 0.toFloat()
-    private var mInitialDownY: Float = 0.toFloat()
+    private var mInitialMotionY: Float = 0F
+    private var mInitialDownY: Float = 0F
     private var mIsBeingDragged: Boolean = false
     private var mActivePointerId = INVALID_POINTER
     // Whether this item is scaled up rather than clipped
@@ -102,19 +103,20 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     private var mReturningToStart: Boolean = false
     private val mDecelerateInterpolator: DecelerateInterpolator
 
-    internal  var mCircleView: CircleImageView
+    private lateinit var mCircleView: CircleImageView
+
     private var mCircleViewIndex = -1
 
     protected var mFrom: Int = 0
 
-    internal var mStartingScale: Float = 0.toFloat()
+    internal var mStartingScale: Float = 0F
 
     /**
      * @return The offset in pixels from the top of this view at which the progress spinner should
      * appear.
      */
     var progressViewStartOffset: Int = 0
-        protected set
+        internal set
 
     /**
      * @return The offset in pixels from the top of this view at which the progress spinner should
@@ -123,7 +125,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     var progressViewEndOffset: Int = 0
         internal set
 
-    internal var mProgress: CircularProgressDrawable
+    lateinit var mProgress: CircularProgressDrawable
 
     private var mScaleAnimation: Animation? = null
 
@@ -151,11 +153,37 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
 
     private var mChildScrollUpCallback: OnChildScrollUpCallback? = null
 
+
+    init {
+        setWillNotDraw(false)
+        mDecelerateInterpolator = DecelerateInterpolator(DECELERATE_INTERPOLATION_FACTOR)
+
+        val metrics = resources.displayMetrics
+        progressCircleDiameter = (CIRCLE_DIAMETER * metrics.density).toInt()
+
+        createProgressView()
+        isChildrenDrawingOrderEnabled = true
+        // the absolute offset has to take into account that the circle starts at an offset
+        progressViewEndOffset = (DEFAULT_CIRCLE_TARGET * metrics.density).toInt()
+        mTotalDragDistance = progressViewEndOffset.toFloat()
+        mNestedScrollingParentHelper = NestedScrollingParentHelper(this)
+
+        mNestedScrollingChildHelper = NestedScrollingChildHelper(this)
+        isNestedScrollingEnabled = true
+
+        mCurrentTargetOffsetTop = -progressCircleDiameter
+        progressViewStartOffset = mCurrentTargetOffsetTop
+        moveToStart(1.0f)
+
+        val a = context.obtainStyledAttributes(attrs, LAYOUT_ATTRS)
+        isEnabled = a.getBoolean(0, true)
+        a.recycle()
+    }
+
+
     private val mRefreshListener = object : Animation.AnimationListener {
         override fun onAnimationStart(animation: Animation) {}
-
         override fun onAnimationRepeat(animation: Animation) {}
-
         override fun onAnimationEnd(animation: Animation) {
             if (mRefreshing) {
                 // Make sure the progress view is fully visible
@@ -166,7 +194,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
                         mListener!!.onRefresh()
                     }
                 }
-                mCurrentTargetOffsetTop = mCircleView.getTop()
+                mCurrentTargetOffsetTop = mCircleView.top
             } else {
                 reset()
             }
@@ -184,7 +212,8 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
      * @param refreshing Whether or not the view should show refresh progress.
      */
     // scale and show
-    /* notify */ var isRefreshing: Boolean
+    /* notify */
+    var isRefreshing: Boolean
         get() = mRefreshing
         set(refreshing) = if (refreshing && mRefreshing != refreshing) {
             mRefreshing = refreshing
@@ -203,15 +232,15 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
 
     private val mAnimateToCorrectPosition = object : Animation() {
         public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-            var targetTop = 0
-            var endTarget = 0
-            if (!mUsingCustomStart) {
-                endTarget = progressViewEndOffset - Math.abs(progressViewStartOffset)
+            var targetTop: Int
+            var endTarget: Int
+            endTarget = if (!mUsingCustomStart) {
+                progressViewEndOffset - Math.abs(progressViewStartOffset)
             } else {
-                endTarget = progressViewEndOffset
+                progressViewEndOffset
             }
             targetTop = mFrom + ((endTarget - mFrom) * interpolatedTime).toInt()
-            val offset = targetTop - mCircleView.getTop()
+            val offset = targetTop - mCircleView.top
             setTargetOffsetTopAndBottom(offset)
             mProgress.arrowScale = 1 - interpolatedTime
         }
@@ -226,7 +255,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     internal fun reset() {
         mCircleView.clearAnimation()
         mProgress.stop()
-        mCircleView.setVisibility(View.GONE)
+        mCircleView.visibility = View.GONE
         setColorViewAlpha(MAX_ALPHA)
         // Return the circle to its start position
         if (mScale) {
@@ -234,7 +263,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
         } else {
             setTargetOffsetTopAndBottom(progressViewStartOffset - mCurrentTargetOffsetTop)
         }
-        mCurrentTargetOffsetTop = mCircleView.getTop()
+        mCurrentTargetOffsetTop = mCircleView.top
     }
 
     override fun setEnabled(enabled: Boolean) {
@@ -250,7 +279,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
     private fun setColorViewAlpha(targetAlpha: Int) {
-        mCircleView.getBackground().alpha = targetAlpha
+        mCircleView.background.alpha = targetAlpha
         mProgress.alpha = targetAlpha
     }
 
@@ -310,10 +339,10 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
             return
         }
         val metrics = resources.displayMetrics
-        if (size == CircularProgressDrawable.LARGE) {
-            progressCircleDiameter = (CIRCLE_DIAMETER_LARGE * metrics.density).toInt()
+        progressCircleDiameter = if (size == CircularProgressDrawable.LARGE) {
+            (CIRCLE_DIAMETER_LARGE * metrics.density).toInt()
         } else {
-            progressCircleDiameter = (CIRCLE_DIAMETER * metrics.density).toInt()
+            (CIRCLE_DIAMETER * metrics.density).toInt()
         }
         // force the bounds of the progress circle inside the circle view to
         // update by setting it to null before updating its size and then
@@ -321,38 +350,6 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
         mCircleView.setImageDrawable(null)
         mProgress.setStyle(size)
         mCircleView.setImageDrawable(mProgress)
-    }
-
-    init {
-
-        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
-
-        mMediumAnimationDuration = resources.getInteger(
-                android.R.integer.config_mediumAnimTime)
-
-        setWillNotDraw(false)
-        mDecelerateInterpolator = DecelerateInterpolator(DECELERATE_INTERPOLATION_FACTOR)
-
-        val metrics = resources.displayMetrics
-        progressCircleDiameter = (CIRCLE_DIAMETER * metrics.density).toInt()
-
-        createProgressView()
-        isChildrenDrawingOrderEnabled = true
-        // the absolute offset has to take into account that the circle starts at an offset
-        progressViewEndOffset = (DEFAULT_CIRCLE_TARGET * metrics.density).toInt()
-        mTotalDragDistance = progressViewEndOffset.toFloat()
-        mNestedScrollingParentHelper = NestedScrollingParentHelper(this)
-
-        mNestedScrollingChildHelper = NestedScrollingChildHelper(this)
-        isNestedScrollingEnabled = true
-
-        mCurrentTargetOffsetTop = -progressCircleDiameter
-        progressViewStartOffset = mCurrentTargetOffsetTop
-        moveToStart(1.0f)
-
-        val a = context.obtainStyledAttributes(attrs, LAYOUT_ATTRS)
-        isEnabled = a.getBoolean(0, true)
-        a.recycle()
     }
 
     override fun getChildDrawingOrder(childCount: Int, i: Int): Int {
@@ -375,7 +372,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
         mProgress = CircularProgressDrawable(context)
         mProgress.setStyle(CircularProgressDrawable.DEFAULT)
         mCircleView.setImageDrawable(mProgress)
-        mCircleView.setVisibility(View.GONE)
+        mCircleView.visibility = View.GONE
         addView(mCircleView)
     }
 
@@ -388,7 +385,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
     private fun startScaleUpAnimation(listener: AnimationListener?) {
-        mCircleView.setVisibility(View.VISIBLE)
+        mCircleView.visibility = View.VISIBLE
         mProgress.alpha = MAX_ALPHA
         mScaleAnimation = object : Animation() {
             public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
@@ -408,8 +405,8 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
      * @param progress
      */
     internal fun setAnimationProgress(progress: Float) {
-        mCircleView.setScaleX(progress)
-        mCircleView.setScaleY(progress)
+        mCircleView.scaleX = progress
+        mCircleView.scaleY = progress
     }
 
     private fun setRefreshing(refreshing: Boolean, notify: Boolean) {
@@ -460,7 +457,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
 
-    @Deprecated("Use {@link #setProgressBackgroundColorSchemeResource(int)}")
+    @Deprecated("Use {@link #setProgressBackgroundColorSchemeResource(int)}", ReplaceWith("setProgressBackgroundColorSchemeResource(colorRes)"))
     fun setProgressBackgroundColor(colorRes: Int) {
         setProgressBackgroundColorSchemeResource(colorRes)
     }
@@ -470,7 +467,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
      *
      * @param colorRes Resource id of the color.
      */
-    fun setProgressBackgroundColorSchemeResource(@ColorRes colorRes: Int) {
+     fun setProgressBackgroundColorSchemeResource(@ColorRes colorRes: Int) {
         setProgressBackgroundColorSchemeColor(ContextCompat.getColor(context, colorRes))
     }
 
@@ -484,7 +481,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
 
-    @Deprecated("Use {@link #setColorSchemeResources(int...)}")
+    @Deprecated("Use {@link #setColorSchemeResources(int...)}", ReplaceWith("setColorSchemeResources(*colors)"))
     fun setColorScheme(@ColorRes vararg colors: Int) {
         setColorSchemeResources(*colors)
     }
@@ -558,8 +555,8 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
         val childWidth = width - paddingLeft - paddingRight
         val childHeight = height - paddingTop - paddingBottom
         child!!.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
-        val circleWidth = mCircleView.getMeasuredWidth()
-        val circleHeight = mCircleView.getMeasuredHeight()
+        val circleWidth = mCircleView.measuredWidth
+        val circleHeight = mCircleView.measuredHeight
         mCircleView.layout(width / 2 - circleWidth / 2, mCurrentTargetOffsetTop,
                 width / 2 + circleWidth / 2, mCurrentTargetOffsetTop + circleHeight)
     }
@@ -628,7 +625,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
 
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                setTargetOffsetTopAndBottom(progressViewStartOffset - mCircleView.getTop())
+                setTargetOffsetTopAndBottom(progressViewStartOffset - mCircleView.top)
                 mActivePointerId = ev.getPointerId(0)
                 mIsBeingDragged = false
 
@@ -711,7 +708,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
         // the circle so it isn't exposed if its blocking content is moved
         if (mUsingCustomStart && dy > 0 && mTotalUnconsumed == 0f
                 && Math.abs(dy - consumed[1]) > 0) {
-            mCircleView.setVisibility(View.GONE)
+            mCircleView.visibility = View.GONE
         }
 
         // Now let our nested parent consume the leftovers
@@ -830,12 +827,12 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
 
         val targetY = progressViewStartOffset + (slingshotDist * dragPercent + extraMove).toInt()
         // where 1.0f is a full circle
-        if (mCircleView.getVisibility() != View.VISIBLE) {
-            mCircleView.setVisibility(View.VISIBLE)
+        if (mCircleView.visibility != View.VISIBLE) {
+            mCircleView.visibility = View.VISIBLE
         }
         if (!mScale) {
-            mCircleView.setScaleX(1f)
-            mCircleView.setScaleY(1f)
+            mCircleView.scaleX = 1f
+            mCircleView.scaleY = 1f
         }
 
         if (mScale) {
@@ -1003,14 +1000,14 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     internal fun moveToStart(interpolatedTime: Float) {
         var targetTop = 0
         targetTop = mFrom + ((progressViewStartOffset - mFrom) * interpolatedTime).toInt()
-        val offset = targetTop - mCircleView.getTop()
+        val offset = targetTop - mCircleView.top
         setTargetOffsetTopAndBottom(offset)
     }
 
     private fun startScaleDownReturnToStartAnimation(from: Int,
                                                      listener: Animation.AnimationListener?) {
         mFrom = from
-        mStartingScale = mCircleView.getScaleX()
+        mStartingScale = mCircleView.scaleX
         mScaleDownToStartAnimation = object : Animation() {
             public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
                 val targetScale = mStartingScale + -mStartingScale * interpolatedTime
@@ -1029,7 +1026,7 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
     internal fun setTargetOffsetTopAndBottom(offset: Int) {
         mCircleView.bringToFront()
         ViewCompat.offsetTopAndBottom(mCircleView, offset)
-        mCurrentTargetOffsetTop = mCircleView.getTop()
+        mCurrentTargetOffsetTop = mCircleView.top
     }
 
     private fun onSecondaryPointerUp(ev: MotionEvent) {
@@ -1084,29 +1081,29 @@ class SwipeRefreshLayout @JvmOverloads constructor(context: Context, attrs: Attr
 
         private val LOG_TAG = SwipeRefreshLayout::class.java.simpleName
 
-        private val MAX_ALPHA = 255
-        private val STARTING_PROGRESS_ALPHA = (.3f * MAX_ALPHA).toInt()
+        private const val MAX_ALPHA = 255
+        private const val STARTING_PROGRESS_ALPHA = (.3f * MAX_ALPHA).toInt()
 
-        private val DECELERATE_INTERPOLATION_FACTOR = 2f
-        private val INVALID_POINTER = -1
-        private val DRAG_RATE = .5f
+        private const val DECELERATE_INTERPOLATION_FACTOR = 2f
+        private const val INVALID_POINTER = -1
+        private const val DRAG_RATE = .5f
 
         // Max amount of circle that can be filled by progress during swipe gesture,
         // where 1.0 is a full circle
-        private val MAX_PROGRESS_ANGLE = .8f
+        private const val MAX_PROGRESS_ANGLE = .8f
 
-        private val SCALE_DOWN_DURATION = 150
+        private const val SCALE_DOWN_DURATION = 150
 
-        private val ALPHA_ANIMATION_DURATION = 300
+        private const val ALPHA_ANIMATION_DURATION = 300
 
-        private val ANIMATE_TO_TRIGGER_DURATION = 200
+        private const val ANIMATE_TO_TRIGGER_DURATION = 200
 
-        private val ANIMATE_TO_START_DURATION = 200
+        private const val ANIMATE_TO_START_DURATION = 200
 
         // Default background for the progress spinner
-        private val CIRCLE_BG_LIGHT = -0x50506
+        private const val CIRCLE_BG_LIGHT = -0x50506
         // Default offset in dips from the top of the view to where the progress spinner should stop
-        private val DEFAULT_CIRCLE_TARGET = 64
+        private const val DEFAULT_CIRCLE_TARGET = 64
         private val LAYOUT_ATTRS = intArrayOf(android.R.attr.enabled)
     }
 }
