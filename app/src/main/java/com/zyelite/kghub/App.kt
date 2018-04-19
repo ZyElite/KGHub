@@ -21,7 +21,6 @@ class App : MultiDexApplication() {
     //初始化块
     init {
         instance = this
-
     }
 
     //声明静态变量

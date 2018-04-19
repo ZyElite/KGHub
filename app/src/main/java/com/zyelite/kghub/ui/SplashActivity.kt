@@ -15,6 +15,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
         val login = getSharedPreferences(StringUtil.getString(R.string.app_name), Context.MODE_PRIVATE).getString(Constant.CURRENT_LOGIN, "")
+
         if (!TextUtils.isEmpty(login)) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()

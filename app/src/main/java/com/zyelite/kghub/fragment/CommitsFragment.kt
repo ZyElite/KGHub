@@ -1,6 +1,5 @@
 package com.zyelite.kghub.fragment
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -23,10 +22,7 @@ class CommitsFragment : BaseFragment() {
     @Inject
     lateinit var eventService: EventService
     override var title = "活动"
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-    }
+    private var page = 1
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -39,19 +35,27 @@ class CommitsFragment : BaseFragment() {
                 .apiComponent(App.getNetComponent())
                 .build()
                 .inject(this)
-        initData()
+        refreshLayout.autoRefresh()
+        refreshLayout.setOnRefreshListener { initData() }
     }
 
 
     private fun initData() {
         val commitsAdapter = CommitsAdapter()
         recycleView.adapter = commitsAdapter
-        val name = context!!.getSharedPreferences("KGHub", Context.MODE_PRIVATE).getString(Constant.CURRENT_LOGIN, "")
-        eventService.getUserEvents(true, name, 1)
+        loadData(commitsAdapter)
+    }
+
+    private fun loadData(commitsAdapter: CommitsAdapter) {
+        eventService.getUserEvents(true, Constant.NAME, page)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe({
                     if (it.isSuccessful) {
+                        val headers = it.headers()
+                        Log.e("heads", headers.toString())
+                        val link = headers.get("Link")
+                        Log.e("link", link.orEmpty())
                         commitsAdapter.replace(it.body()!!)
                     }
                 }, {

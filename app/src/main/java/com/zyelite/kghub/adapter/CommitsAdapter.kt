@@ -12,7 +12,10 @@ import android.view.ViewGroup
 import com.zyelite.kghub.R
 import com.zyelite.kghub.model.EventResModel
 import com.zyelite.kghub.model.constant.*
-import com.zyelite.kghub.utils.*
+import com.zyelite.kghub.utils.DateUtil
+import com.zyelite.kghub.utils.EllipsizeLineSpan
+import com.zyelite.kghub.utils.ImageUtil
+import com.zyelite.kghub.utils.StringUtil
 import kotlinx.android.synthetic.main.item_commits_layout.view.*
 import java.util.*
 
@@ -51,7 +54,7 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
                 descriptionStr = resModel.payload.comment.body
             }
             Event.DELETE_EVENT -> {
-                actionStr = if (Constant.BRANCH == resModel.payload.refType) {
+                actionStr = if (DeleteEvent.BRANCH == resModel.payload.refType) {
                     String.format(StringUtil.getString(R.string.delete_branch_at),
                             resModel.payload.ref, resModel.repo.name)
                 } else {
@@ -143,10 +146,10 @@ class CommitsAdapter : RecyclerView.Adapter<CommitsAdapter.CommitsHolder>() {
 
             Event.CREATE_EVENT -> {
                 actionStr = when {
-                    Constant.REPOSITORY == resModel.payload.refType -> {
+                    CreateEvent.REPOSITORY == resModel.payload.refType -> {
                         String.format(StringUtil.getString(R.string.created_repo), repoName)
                     }
-                    Constant.BRANCH == resModel.payload.refType -> {
+                    CreateEvent.BRANCH == resModel.payload.refType -> {
                         String.format(StringUtil.getString(R.string.created_branch_at),
                                 resModel.payload.ref, repoName)
                     }

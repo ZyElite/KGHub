@@ -1,5 +1,6 @@
 package com.zyelite.kghub.fragment.base
 
+import android.os.Bundle
 import android.support.v4.app.Fragment
 import io.realm.Realm
 
@@ -11,4 +12,8 @@ import io.realm.Realm
 open class BaseFragment : Fragment() {
     open var title = ""
     var realm = Realm.getDefaultInstance()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+    }
 }
