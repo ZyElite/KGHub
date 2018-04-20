@@ -7,11 +7,11 @@ def OkHttpVersion = "3.10.0"
 def OkhttpLoggingInterceptor = "3.8.1"
 def GlideVersion = "4.6.1"
 
-def RxlifecycleVersion = "2.2.1"
+def RxLifecycleVersion = "2.2.1"
 
 def IcepickVersion = "3.2.0"
 
-def RxjavaVersion = "2.1.9"
+def RxJavaVersion = "2.1.9"
 def RxKotlinVersion = "2.2.0"
 
 def RxAndroidVersion = "2.0.2"
@@ -59,7 +59,7 @@ ext {
     //libLogger = "com.orhanobut:logger:${LoggerVersion}"
 
     //Rx系列
-    libRxJava = "io.reactivex.rxjava2:rxjava:${RxjavaVersion}"
+    libRxJava = "io.reactivex.rxjava2:rxjava:${RxJavaVersion}"
     libRxAndroid = "io.reactivex.rxjava2:rxandroid:${RxAndroidVersion}"
     libRxBinding = "com.jakewharton.rxbinding2:rxbinding:${RxBindingVersion}"
     libRxKotlin = "io.reactivex.rxjava2:rxkotlin:${RxKotlinVersion}"
@@ -84,8 +84,8 @@ ext {
 //    compile 'com.jakewharton.rxbinding2:rxbinding-leanback-v17:2.1.1'
 
     // rx管理activity生命周器
-    libRxlifecycle = "com.trello.rxlifecycle2:rxlifecycle:${RxlifecycleVersion}"
-    libRxlifecycleComponents = "com.trello.rxlifecycle2:rxlifecycle-components:${RxlifecycleVersion}"
+    libRxlifecycle = "com.trello.rxlifecycle2:rxlifecycle:${RxLifecycleVersion}"
+    libRxlifecycleComponents = "com.trello.rxlifecycle2:rxlifecycle-components:${RxLifecycleVersion}"
     libIcepick = "frankiesardo:icepick:${IcepickVersion}"
     libIcepickProcessor = "frankiesardo:icepick-processor:${IcepickVersion}"
     //Support
