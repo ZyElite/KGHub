@@ -1,6 +1,8 @@
 package com.zyelite.kghub.fragment
 
 import android.os.Bundle
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -23,7 +25,7 @@ class CommitsFragment : BaseFragment() {
     lateinit var eventService: EventService
     override var title = "活动"
     private var page = 1
-
+    private val pageSize = 30
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_item_list, container, false)
@@ -35,14 +37,48 @@ class CommitsFragment : BaseFragment() {
                 .apiComponent(App.getNetComponent())
                 .build()
                 .inject(this)
-        refreshLayout.autoRefresh()
-        refreshLayout.setOnRefreshListener { initData() }
+
+        //refreshLayout.setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener { initData()})
+
+//        refreshLayout.setOnRefreshListener { initData() }
+        initData()
+        initListener()
+
+    }
+
+    private var isLoadMore = false
+    private var lastVisibleItemPosition: Int = 0
+    private fun initListener() {
+        val layoutManager = recyclerView.layoutManager
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                recyclerView.childCount
+                layoutManager.childCount
+                layoutManager.itemCount
+                Log.e("asd", " recyclerView.childCount= " + recyclerView.childCount
+                        + " layoutManager.childCount = " + layoutManager.childCount
+                        + " layoutManager.itemCount=" + layoutManager.itemCount)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    recyclerView.childCount
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                lastVisibleItemPosition = (layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
+                if (lastVisibleItemPosition == layoutManager.itemCount) {
+                    //last one
+                    isLoadMore = true
+                }
+            }
+        })
     }
 
 
     private fun initData() {
         val commitsAdapter = CommitsAdapter()
-        recycleView.adapter = commitsAdapter
+        recyclerView.adapter = commitsAdapter
         loadData(commitsAdapter)
     }
 

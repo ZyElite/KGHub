@@ -1,4 +1,4 @@
-package com.zyelite.kghub.annotations
+package com.zyelite.kghub.model.annotations
 
 import android.support.annotation.StringDef
 import com.zyelite.kghub.model.constant.IssuesEvent

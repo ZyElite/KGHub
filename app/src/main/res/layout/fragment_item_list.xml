@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<com.zyelite.kghub.widget.AutoSwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/refreshLayout"
@@ -9,7 +9,7 @@
     tools:context="com.zyelite.kghub.fragment.CommitsFragment">
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycleView"
+        android:id="@+id/recyclerView"
         android:name="com.zyelite.kghub.fragment.CommitsFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -18,6 +18,6 @@
         app:layoutManager="LinearLayoutManager"
         tools:listitem="@layout/fragment_commit_item" />
 
-</com.zyelite.kghub.widget.AutoSwipeRefreshLayout>
+</android.support.v4.widget.SwipeRefreshLayout>
 
 

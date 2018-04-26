@@ -16,7 +16,7 @@ class AutoSwipeRefreshLayout : SwipeRefreshLayout {
 
     constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
     /**
      * 自动刷新
