@@ -112,10 +112,9 @@ class CircleImageView(context: Context, color: Int) : ImageView(context) {
 
     private inner class OvalShadow internal constructor(shadowRadius: Int) : OvalShape() {
         private var mRadialGradient: RadialGradient? = null
-        private val mShadowPaint: Paint
+        private val mShadowPaint: Paint = Paint()
 
         init {
-            mShadowPaint = Paint()
             mShadowRadius = shadowRadius
             updateRadialGradient(rect().width().toInt())
         }
@@ -138,6 +137,5 @@ class CircleImageView(context: Context, color: Int) : ImageView(context) {
             mShadowPaint.shader = mRadialGradient
         }
     }
-
 
 }

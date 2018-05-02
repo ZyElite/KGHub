@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.zyelite.kghub.widget.SuperSwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/refreshLayout"
@@ -18,6 +18,6 @@
         app:layoutManager="LinearLayoutManager"
         tools:listitem="@layout/fragment_commit_item" />
 
-</android.support.v4.widget.SwipeRefreshLayout>
+</com.zyelite.kghub.widget.SuperSwipeRefreshLayout>
 
 
