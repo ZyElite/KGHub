@@ -39,9 +39,10 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     private val CIRCLE_DIAMETER = 40
     @VisibleForTesting
     private val CIRCLE_DIAMETER_LARGE = 56
-
+    private val INVALID_POINTER = -1
     private var mDecelerateInterpolator: DecelerateInterpolator? = null
     private val DECELERATE_INTERPOLATION_FACTOR = 2f
+    private val DRAG_RATE = .5f
     //是否开始下拉
     private var mIsBeingDragged: Boolean = false
     // Target is returning to its start offset because it was cancelled or a refresh was triggered
@@ -173,7 +174,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
                 mInitialDownY = ev.getY(pointerIndex)
             }
             MotionEvent.ACTION_MOVE -> {
-                if (mActivePointerId == -1) {
+                if (mActivePointerId == INVALID_POINTER) {
                     LogUtil.e("Got ACTION_MOVE event but don't have an active pointer id.")
                     return false
                 }
@@ -181,13 +182,20 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
                 if (pointerIndex < 0) {
                     return false
                 }
-                val offsetY = ev.getY(pointerIndex) - mInitialDownY
+                var offsetY = ev.getY(pointerIndex) - mInitialDownY
                 //若是顶部不能滑动，则offsetY是正值，直接与mTouchSlop做比较。
                 //若是底部不能滑动，则offsetY是负值，取反后与mTouchSlop做比较。
-                if (Math.abs(offsetY) > mTouchSlop && !mIsBeingDragged) {
+
+                if (!canChildScrollUp()) {
+                    offsetY = offsetY
+                }
+                if (!canChildScrollDown()) {
+                    offsetY = -offsetY
+                }
+
+                if (offsetY > mTouchSlop && !mIsBeingDragged) {
                     mInitialMotionY = mInitialDownY + mTouchSlop
                     mIsBeingDragged = true
-                    return true
                 }
             }
             MotionEvent.ACTION_POINTER_UP -> {
@@ -196,6 +204,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 mIsBeingDragged = false
+                mActivePointerId = INVALID_POINTER
             }
         }
         return mIsBeingDragged
@@ -233,8 +242,82 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         mCurrentTargetOffsetTop = mCircleView!!.top
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return super.onTouchEvent(event)
+    override fun onTouchEvent(ev: MotionEvent): Boolean {
+        //获取手势动作
+        val action = ev.actionMasked
+        val pointerIndex: Int
+        if (!isEnabled || canChildScrollUp() && canChildScrollDown() || mRefreshing || isLoadingMore) {
+            return false
+        }
+
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                mActivePointerId = ev.getPointerId(0)
+                mIsBeingDragged = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                pointerIndex = ev.findPointerIndex(mActivePointerId)
+                if (pointerIndex < 0) {
+                    return false
+                }
+                var offsetY = ev.getY(pointerIndex) - mInitialDownY
+                if (!canChildScrollUp()) {
+                    //若是顶部不能滑动，则yDiff是正值，直接与mTouchSlop做比较。
+                    offsetY = offsetY
+                }
+                if (!canChildScrollDown()) {
+                    //若是底部不能滑动，则yDiff是负值，取反后与mTouchSlop做比较。
+                    offsetY = -offsetY
+                }
+
+                if (offsetY > mTouchSlop && !mIsBeingDragged) {
+                    mInitialMotionY = mInitialDownY + mTouchSlop
+                    mIsBeingDragged = true
+
+                }
+                if (mIsBeingDragged) {
+                    /**滑动的距离，向下滑动为正，向下滑动为负 */
+                    val overscrollTop = (ev.getY(pointerIndex) - mInitialMotionY) * 0.5f
+                    if (overscrollTop > 0 && !canChildScrollUp()) {
+                        //加载更多
+                       // moveSpinner(overscrollTop)
+                        LogUtil.e("下拉刷新")
+                    } else if (overscrollTop < 0 && !canChildScrollDown()) {
+                        //当处于底部，且有滑动的趋势直接加载更多。
+                       // loadMore()
+                        LogUtil.e("加载更多")
+                    } else {
+                        return false
+                    }
+                }
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                pointerIndex = ev.actionIndex
+                if (pointerIndex < 0) {
+                    return false
+                }
+                mActivePointerId = ev.getPointerId(pointerIndex)
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
+
+            MotionEvent.ACTION_UP -> {
+                pointerIndex = ev.findPointerIndex(mActivePointerId)
+                if (pointerIndex < 0) {
+                    return false
+                }
+                if (mIsBeingDragged) {
+                    val y = ev.getY(pointerIndex)
+                    val overscrollTop = (y - mInitialMotionY) * 0.5f
+                    mIsBeingDragged = false
+                   // finishSpinner(overscrollTop)
+                }
+                mActivePointerId = INVALID_POINTER
+                return false
+            }
+            MotionEvent.ACTION_CANCEL -> return false
+        }
+        return true
     }
 
     /**

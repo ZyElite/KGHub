@@ -622,6 +622,10 @@ public static java.lang.String TABLENAME;
  -dontwarn **$$Lambda$*
  -keep public class *extends java.lang.annotation.Annotation{}
 -keep class io.realm.exceptions.* { *; }
+
+-keepnames class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
 #-libraryjars ../app/libs/armeabi/libmarsstn.so
 #-libraryjars ../app/libs/armeabi/libmarsxlog.so
 #-libraryjars ../app/libs/armeabi/libstlport_shared.so
