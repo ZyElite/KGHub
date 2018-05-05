@@ -1,8 +1,6 @@
 package com.zyelite.kghub.fragment
 
 import android.os.Bundle
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -49,30 +47,6 @@ class CommitsFragment : BaseFragment() {
     private var isLoadMore = false
     private var lastVisibleItemPosition: Int = 0
     private fun initListener() {
-        val layoutManager = recyclerView.layoutManager
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                recyclerView.childCount
-                layoutManager.childCount
-                layoutManager.itemCount
-                Log.e("asd", " recyclerView.childCount= " + recyclerView.childCount
-                        + " layoutManager.childCount = " + layoutManager.childCount
-                        + " layoutManager.itemCount=" + layoutManager.itemCount)
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    recyclerView.childCount
-                }
-            }
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                lastVisibleItemPosition = (layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
-                if (lastVisibleItemPosition == layoutManager.itemCount) {
-                    //last one
-                    isLoadMore = true
-                }
-            }
-        })
     }
 
 

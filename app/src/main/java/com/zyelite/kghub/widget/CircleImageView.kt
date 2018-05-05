@@ -38,6 +38,7 @@ class CircleImageView(context: Context, color: Int) : ImageView(context) {
     }
 
     private var mListener: Animation.AnimationListener? = null
+
     var mShadowRadius: Int = 0
 
     init {
@@ -82,15 +83,14 @@ class CircleImageView(context: Context, color: Int) : ImageView(context) {
 
     public override fun onAnimationStart() {
         super.onAnimationStart()
-        if (mListener !=
-                null) {
-            mListener!!.onAnimationStart(animation)
+        if (mListener != null) {
+            mListener?.onAnimationStart(animation)
         }
     }
 
     public override fun onAnimationEnd() {
         super.onAnimationEnd()
-        if (mListener != null) {
+        if (mListener != null && animation != null) {
             mListener!!.onAnimationEnd(animation)
         }
     }
