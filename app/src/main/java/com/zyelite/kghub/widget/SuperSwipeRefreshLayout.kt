@@ -69,6 +69,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     //手指第一次按下的位置
     private var mInitialDownY: Float = 0F
 
+    //是否刷新
     private var mRefreshing = false
 
     private var isLoadingMore = false
@@ -109,12 +110,14 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         override fun onAnimationStart(animation: Animation) {}
         override fun onAnimationRepeat(animation: Animation) {}
         override fun onAnimationEnd(animation: Animation) {
+            LogUtil.e("走了吗")
             if (mRefreshing) {
                 // Make sure the progress view is fully visible
                 mProgress?.alpha = MAX_ALPHA
                 mProgress!!.start()
                 if (mNotify) {
                     //刷新回调
+                    LogUtil.e("走了吗")
                 }
                 mCurrentTargetOffsetTop = mCircleView!!.top
             } else {
@@ -278,11 +281,20 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         val action = ev.actionMasked
         val pointerIndex: Int
 
-        if (!isEnabled || (canChildScrollUp() && canChildScrollDown())
-                || mRefreshing || isLoadingMore) {
-            return false
+        if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
+            mReturningToStart = false
         }
 
+        val b = canChildScrollUp() && canChildScrollDown()
+        if (!isEnabled || b || mReturningToStart
+                || mRefreshing || mNestedScrollInProgress) {
+            // Fail fast if we're not in a state where a swipe is possible
+            LogUtil.e("onInterceptTouchEvent mRefreshing:$mRefreshing")
+            LogUtil.e("onInterceptTouchEvent canChildScrollUpcan:$b")
+            LogUtil.e("onInterceptTouchEvent mRefreshing:$mReturningToStart")
+            LogUtil.e("onInterceptTouchEvent mRefreshing:$mNestedScrollInProgress")
+            return false
+        }
         when (action) {
             MotionEvent.ACTION_DOWN -> {
                 moveToStart()
@@ -363,10 +375,29 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         //获取手势动作
         val action = ev.actionMasked
         val pointerIndex: Int
-        if (!isEnabled || (canChildScrollUp() && canChildScrollDown())
-                || mRefreshing || isLoadingMore) {
+//        if (!isEnabled || (canChildScrollUp() && canChildScrollDown())
+//                || mRefreshing || isLoadingMore) {
+//            return false
+//        }
+
+
+        if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
+            mReturningToStart = false
+        }
+
+        val b = canChildScrollUp() && canChildScrollDown()
+        if (!isEnabled || b || mReturningToStart
+                || mRefreshing || mNestedScrollInProgress) {
+            // Fail fast if we're not in a state where a swipe is possible
+            LogUtil.e("mRefreshing:$mRefreshing")
+            LogUtil.e("canChildScrollUpcan:$b")
+            LogUtil.e("mRefreshing:$mReturningToStart")
+            LogUtil.e("mRefreshing:$mNestedScrollInProgress")
             return false
         }
+
+
+
         when (action) {
             MotionEvent.ACTION_DOWN -> {
                 mActivePointerId = ev.getPointerId(0)
@@ -419,8 +450,10 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
                     return false
                 }
                 if (mIsBeingDragged) {
+
                     val overScrollTop = (ev.getY(pointerIndex) - mInitialMotionY) * 0.5f
                     mIsBeingDragged = false
+                    LogUtil.e("Super onTouchEvent:$overScrollTop")
                     finishSpinner(overScrollTop)
                 }
                 mActivePointerId = INVALID_POINTER
@@ -473,12 +506,12 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         }
         if (overScrollTop < mTotalDragDistance) {
             if (mProgress?.alpha!! > STARTING_PROGRESS_ALPHA && !isAnimationRunning(mAlphaStartAnimation)) {
-                LogUtil.e("startProgressAlphaStartAnimation:${mProgress!!.alpha}")
+                LogUtil.e("Super startProgressAlphaStartAnimation:${mProgress!!.alpha}")
                 startProgressAlphaStartAnimation()
             }
         } else {
             if (mProgress!!.alpha < MAX_ALPHA && !isAnimationRunning(mAlphaMaxAnimation)) {
-                LogUtil.e("startProgressAlphaMaxAnimation:${mProgress!!.alpha}")
+                LogUtil.e("Super startProgressAlphaMaxAnimation:${mProgress!!.alpha}")
                 startProgressAlphaMaxAnimation()
             }
         }
@@ -520,6 +553,8 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     private fun setRefreshing(refreshing: Boolean, notify: Boolean) {
         if (mRefreshing != refreshing) {
+            LogUtil.e("Super setRefreshing refreshing $refreshing")
+            LogUtil.e("Super setRefreshing mRefreshing $refreshing")
             mNotify = notify
             ensureTarget()
             mRefreshing = refreshing
@@ -564,6 +599,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         mAnimateToCorrectPosition.duration = ANIMATE_TO_TRIGGER_DURATION
         mAnimateToCorrectPosition.interpolator = mDecelerateInterpolator
         if (listener != null) {
+            LogUtil.e("Super listener 不为空")
             mCircleView!!.setAnimationListener(listener)
         }
         mCircleView!!.clearAnimation()
@@ -623,18 +659,18 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
      * 回弹效果
      */
     private fun finishSpinner(overScrollTop: Float) {
+        LogUtil.e("Super onStopNestedScroll:$mTotalDragDistance")
         if (overScrollTop > mTotalDragDistance) {
             setRefreshing(true, true /* notify */)
         } else {
+            LogUtil.e("finishSpinner   else")
             // cancel refresh
             mRefreshing = false
             mProgress?.setStartEndTrim(0f, 0f)
             var listener: Animation.AnimationListener? = null
             if (!mScale) {
                 listener = object : Animation.AnimationListener {
-
                     override fun onAnimationStart(animation: Animation) {}
-
                     override fun onAnimationEnd(animation: Animation) {
                         if (!mScale) {
                             startScaleDownAnimation(null)
@@ -650,6 +686,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     }
 
     private fun animateOffsetToStartPosition(from: Int, listener: AnimationListener?) {
+        LogUtil.e("animateOffsetToStartPosition ")
         if (mScale) {
             // Scale the item back down
             startScaleDownReturnToStartAnimation(from, listener)
@@ -692,6 +729,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         if (listener != null) {
             mCircleView!!.setAnimationListener(listener)
         }
+        LogUtil.e("startScaleDownReturnToStartAnimation ")
         mCircleView!!.clearAnimation()
         mCircleView!!.startAnimation(mScaleDownToStartAnimation)
     }
@@ -841,6 +879,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         // Finish the spinner for nested scrolling if we ever consumed any
         // unconsumed nested scroll
         if (mTotalUnconsumed > 0) {
+            LogUtil.e("Super onStopNestedScroll:$mTotalUnconsumed")
             finishSpinner(mTotalUnconsumed)
             mTotalUnconsumed = 0f
         }
