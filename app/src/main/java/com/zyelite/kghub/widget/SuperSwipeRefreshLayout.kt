@@ -1,143 +1,264 @@
 package com.zyelite.kghub.widget
 
 import android.content.Context
-import android.os.Build
-import android.support.annotation.RequiresApi
+import android.support.annotation.ColorInt
+import android.support.annotation.ColorRes
 import android.support.annotation.VisibleForTesting
+import android.support.v4.content.ContextCompat
 import android.support.v4.view.*
 import android.support.v4.widget.CircularProgressDrawable
 import android.support.v4.widget.ListViewCompat
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.animation.Animation
-import android.view.animation.Animation.AnimationListener
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Transformation
 import android.widget.AbsListView
 import android.widget.ListView
 import com.zyelite.kghub.utils.LogUtil
 
-
 /**
  * @author ZyElite
- * @create 2018/4/24
- * @description SuperSwipeRefreshLayout add load more data
+ * @create 2018/5/8
+ * @description SuperSwipeRefreshLayout
  */
-
 class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollingChild {
-    // Default background for the progress spinner
-    private val CIRCLE_BG_LIGHT = -0x50506
-    private var mContentView: View? = null
-    private var mProgress: CircularProgressDrawable? = null
-    private var mCircleView: CircleImageView? = null
-    private var mCurrentTargetOffsetTop: Int = 0
-    private var mCircleDiameter: Int = 0
-    private var mOriginalOffsetTop: Int = 0
-    private var mSpinnerOffsetEnd: Int = 0
+    // Maps to ProgressBar.Large style
+    val LARGE = CircularProgressDrawable.LARGE
+    // Maps to ProgressBar default style
+    val DEFAULT = CircularProgressDrawable.DEFAULT
+
+    @VisibleForTesting
+    internal val CIRCLE_DIAMETER = 40
+    @VisibleForTesting
+    internal val CIRCLE_DIAMETER_LARGE = 56
+
+    private val LOG_TAG = SuperSwipeRefreshLayout::class.java.simpleName
+
+    private val MAX_ALPHA = 255
+    private val STARTING_PROGRESS_ALPHA = (.3f * MAX_ALPHA).toInt()
+
+    private val DECELERATE_INTERPOLATION_FACTOR = 2f
+    private val INVALID_POINTER = -1
+    private val DRAG_RATE = .5f
 
     // Max amount of circle that can be filled by progress during swipe gesture,
     // where 1.0 is a full circle
     private val MAX_PROGRESS_ANGLE = .8f
 
-    @VisibleForTesting
-    private val CIRCLE_DIAMETER = 40
-    @VisibleForTesting
-    private val CIRCLE_DIAMETER_LARGE = 56
-    private val INVALID_POINTER = -1
-    private var mTotalDragDistance = -1f
-    // Whether this item is scaled up rather than clipped
-    private var mScale: Boolean = false
-    // Whether the client has set a custom starting position;
-    private var mUsingCustomStart: Boolean = false
-    private var mDecelerateInterpolator: DecelerateInterpolator? = null
-    private val DECELERATE_INTERPOLATION_FACTOR = 2f
-    private val DRAG_RATE = .5f
-    //是否开始下拉
-    private var mIsBeingDragged: Boolean = false
-    // Target is returning to its start offset because it was cancelled or a refresh was triggered
-    private var mReturningToStart: Boolean = false
-    //触发移动事件的最短距离
-    private var mTouchSlop: Int = 0
+    private val SCALE_DOWN_DURATION = 150
 
-    private var mInitialMotionY: Float = 0F
+    private val ALPHA_ANIMATION_DURATION = 300
 
-    //上拉加载的view高度
-    private var mInitialScrollUpY = 0
-    //手指第一次按下的位置
-    private var mInitialDownY: Float = 0F
+    private val ANIMATE_TO_TRIGGER_DURATION = 200
 
-    //是否刷新
-    private var mRefreshing = false
+    private val ANIMATE_TO_START_DURATION = 200
 
-    private var isLoadingMore = false
-
-    private var mActivePointerId: Int = 0
-
-    private val MAX_ALPHA = 255
-    private val STARTING_PROGRESS_ALPHA = (.3f * MAX_ALPHA).toInt()
-    private var mAlphaStartAnimation: Animation? = null
-    private var mAlphaMaxAnimation: Animation? = null
-    private val ALPHA_ANIMATION_DURATION = 300L
-    private var mNotify: Boolean = false
-    private var mScaleAnimation: Animation? = null
-    private var mScaleDownAnimation: Animation? = null
-    private var mScaleDownToStartAnimation: Animation? = null
-    private var mFrom: Int = 0
-    private val SCALE_DOWN_DURATION = 150L
-    private val mMediumAnimationDuration: Int = 0
-    private val ANIMATE_TO_TRIGGER_DURATION = 200L
-    private val ANIMATE_TO_START_DURATION = 200L
-    private var mStartingScale: Float = 0F
+    // Default background for the progress spinner
+    private val CIRCLE_BG_LIGHT = -0x50506
+    // Default offset in dips from the top of the view to where the progress spinner should stop
+    private val DEFAULT_CIRCLE_TARGET = 64
     private val LAYOUT_ATTRS = intArrayOf(android.R.attr.enabled)
 
-    // If nested scrolling is enabled, the total amount that needed to be
-    // consumed by this as the nested scrolling parent is used in place of the
-    // overscroll determined by MOVE events in the onTouch handler
+    private var mContentView: View? = null // the target of the gesture
+    private var mListener: SuperSwipeRefreshLayout.OnRefreshListener? = null
+    //是否刷新
+    private var mRefreshing = false
+    //加载更多
+    private var isLoadingMore = false
+    private var mTouchSlop: Int
+    private var mTotalDragDistance = -1f
+
     private var mTotalUnconsumed: Float = 0F
-    private var mNestedScrollingParentHelper: NestedScrollingParentHelper? = null
-    private var mNestedScrollingChildHelper: NestedScrollingChildHelper? = null
+    private val mNestedScrollingParentHelper: NestedScrollingParentHelper
+    private val mNestedScrollingChildHelper: NestedScrollingChildHelper
     private val mParentScrollConsumed = IntArray(2)
     private val mParentOffsetInWindow = IntArray(2)
     private var mNestedScrollInProgress: Boolean = false
-    private val DEFAULT_CIRCLE_TARGET = 64
 
+    private val mMediumAnimationDuration: Int
+    private var mCurrentTargetOffsetTop: Int = 0
+
+    //上拉加载的view高度
+    private var mInitialScrollUpY = 0
+    //加载更多
+    private lateinit var mFooterView: SuperSwipeRefreshLayoutFootView
+
+
+    private var mInitialMotionY: Float = 0F
+    private var mInitialDownY: Float = 0F
+    private var mIsBeingDragged: Boolean = false
+    private var mActivePointerId = INVALID_POINTER
+    // Whether this item is scaled up rather than clipped
+    private var mScale: Boolean = false
+
+    // Target is returning to its start offset because it was cancelled or a
+    // refresh was triggered.
+    private var mReturningToStart: Boolean = false
+    private val mDecelerateInterpolator: DecelerateInterpolator
+
+    private lateinit var mCircleView: CircleImageView
+    private var mCircleViewIndex = -1
+
+    private var mFrom: Int = 0
+
+    private var mStartingScale: Float = 0F
+
+    //进度微调器应该在此视图顶部的像素偏移量出现
+    private var progressViewStartOffset: Int = 0
+
+    private var progressViewEndOffset: Int = 0
+
+    private lateinit var mProgress: CircularProgressDrawable
+
+    private var mScaleAnimation: Animation? = null
+
+    private var mScaleDownAnimation: Animation? = null
+
+    private var mAlphaStartAnimation: Animation? = null
+
+    private var mAlphaMaxAnimation: Animation? = null
+
+    private var mScaleDownToStartAnimation: Animation? = null
+
+    private var mNotify: Boolean = false
+
+    private var progressCircleDiameter: Int = 0
 
     // Whether the client has set a custom starting position;
+    private var mUsingCustomStart: Boolean = false
+
+    private var mChildScrollUpCallback: SuperSwipeRefreshLayout.OnChildScrollUpCallback? = null
+
     private val mRefreshListener = object : Animation.AnimationListener {
-        override fun onAnimationStart(animation: Animation) {}
-        override fun onAnimationRepeat(animation: Animation) {}
-        override fun onAnimationEnd(animation: Animation) {
-            LogUtil.e("走了吗")
+        override fun onAnimationStart(animation: Animation?) {}
+
+        override fun onAnimationRepeat(animation: Animation?) {}
+
+        override fun onAnimationEnd(animation: Animation?) {
             if (mRefreshing) {
                 // Make sure the progress view is fully visible
-                mProgress?.alpha = MAX_ALPHA
-                mProgress!!.start()
+                mProgress.alpha = MAX_ALPHA
+                mProgress.start()
                 if (mNotify) {
-                    //刷新回调
-                    LogUtil.e("走了吗")
+                    if (mListener != null) {
+                        mListener!!.onRefresh()
+                    }
                 }
-                mCurrentTargetOffsetTop = mCircleView!!.top
+                mCurrentTargetOffsetTop = mCircleView.top
             } else {
                 reset()
             }
         }
     }
 
-    private fun reset() {
-        mCircleView!!.clearAnimation()
-        mProgress!!.stop()
-        mCircleView!!.visibility = View.GONE
+    /**
+     * 是否刷新
+     */
+    var isRefreshing: Boolean
+        get() = mRefreshing
+        set(refreshing) = if (refreshing && mRefreshing != refreshing) {
+            mRefreshing = refreshing
+            val endTarget: Int = if (!mUsingCustomStart) {
+                progressViewEndOffset + progressViewStartOffset
+            } else {
+                progressViewEndOffset
+            }
+            setTargetOffsetTopAndBottom(endTarget - mCurrentTargetOffsetTop)
+            mNotify = false
+            startScaleUpAnimation(mRefreshListener)
+        } else {
+            setRefreshing(refreshing, false)
+        }
+
+    private val mAnimateToCorrectPosition = object : Animation() {
+        public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
+            var targetTop = 0
+            var endTarget = 0
+            if (!mUsingCustomStart) {
+                endTarget = progressViewEndOffset - Math.abs(progressViewStartOffset)
+            } else {
+                endTarget = progressViewEndOffset
+            }
+            targetTop = mFrom + ((endTarget - mFrom) * interpolatedTime).toInt()
+            val offset = targetTop - mCircleView.top
+            setTargetOffsetTopAndBottom(offset)
+            mProgress.arrowScale = 1 - interpolatedTime
+        }
+    }
+
+    private val mAnimateToStartPosition = object : Animation() {
+        public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
+            moveToStart(interpolatedTime)
+        }
+    }
+
+    internal fun reset() {
+        mCircleView.clearAnimation()
+        mProgress.stop()
+        mCircleView.visibility = View.GONE
         setColorViewAlpha(MAX_ALPHA)
         // Return the circle to its start position
         if (mScale) {
             setAnimationProgress(0f /* animation complete and view is hidden */)
         } else {
-            setTargetOffsetTopAndBottom(mOriginalOffsetTop - mCurrentTargetOffsetTop)
+            setTargetOffsetTopAndBottom(progressViewStartOffset - mCurrentTargetOffsetTop)
         }
-        mCurrentTargetOffsetTop = mCircleView!!.top
+        mCurrentTargetOffsetTop = mCircleView.top
+    }
+
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        if (!enabled) {
+            reset()
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        reset()
+    }
+
+    private fun setColorViewAlpha(targetAlpha: Int) {
+        mCircleView.background.alpha = targetAlpha
+        mProgress.alpha = targetAlpha
+    }
+
+    fun setProgressViewOffset(scale: Boolean, start: Int, end: Int) {
+        mScale = scale
+        progressViewStartOffset = start
+        progressViewEndOffset = end
+        mUsingCustomStart = true
+        reset()
+        mRefreshing = false
+    }
+
+    fun setProgressViewEndTarget(scale: Boolean, end: Int) {
+        progressViewEndOffset = end
+        mScale = scale
+        mCircleView.invalidate()
+    }
+
+    fun setSize(size: Int) {
+        if (size != CircularProgressDrawable.LARGE && size != CircularProgressDrawable.DEFAULT) {
+            return
+        }
+        val metrics = resources.displayMetrics
+        if (size == CircularProgressDrawable.LARGE) {
+            progressCircleDiameter = (CIRCLE_DIAMETER_LARGE * metrics.density).toInt()
+        } else {
+            progressCircleDiameter = (CIRCLE_DIAMETER * metrics.density).toInt()
+        }
+        // force the bounds of the progress circle inside the circle view to
+        // update by setting it to null before updating its size and then
+        // re-setting it
+        mCircleView.setImageDrawable(null)
+        mProgress.setStyle(size)
+        mCircleView.setImageDrawable(mProgress)
     }
 
 
@@ -146,415 +267,85 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     constructor(context: Context, attributeSet: AttributeSet?) : this(context, attributeSet, 0)
 
     constructor(context: Context, attributeSet: AttributeSet?, defStyleAttr: Int) : super(context, attributeSet, defStyleAttr) {
-        val metrics = resources.displayMetrics
 
         /**触发移动事件的最小距离，自定义View处理touch事件的时候，有的时候需要判断用户是否真的存在movie，
          * 系统提供了这样的方法。表示滑动的时候，手的移动要大于这个返回的距离值才开始移动控件。*/
-        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop * 2
-        mCircleDiameter = (CIRCLE_DIAMETER * metrics.density).toInt()
-        mCurrentTargetOffsetTop = -mCircleDiameter
-        mOriginalOffsetTop = mCurrentTargetOffsetTop
-
+        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        mMediumAnimationDuration = resources.getInteger(
+                android.R.integer.config_mediumAnimTime)
+        setWillNotDraw(false)
         //获取移动动画的差值器
         mDecelerateInterpolator = DecelerateInterpolator(DECELERATE_INTERPOLATION_FACTOR)
-
+        val metrics = resources.displayMetrics
+        progressCircleDiameter = (CIRCLE_DIAMETER * metrics.density).toInt()
         createProgressView()
-
         isChildrenDrawingOrderEnabled = true
         // the absolute offset has to take into account that the circle starts at an offset
-        mSpinnerOffsetEnd = (DEFAULT_CIRCLE_TARGET * metrics.density).toInt()
-        mTotalDragDistance = mSpinnerOffsetEnd.toFloat()
-
+        progressViewEndOffset = (DEFAULT_CIRCLE_TARGET * metrics.density).toInt()
+        mTotalDragDistance = progressViewEndOffset.toFloat()
         mNestedScrollingParentHelper = NestedScrollingParentHelper(this)
+
         mNestedScrollingChildHelper = NestedScrollingChildHelper(this)
         isNestedScrollingEnabled = true
-
+        mCurrentTargetOffsetTop = -progressCircleDiameter
+        progressViewStartOffset = mCurrentTargetOffsetTop
         moveToStart(1.0f)
         val a = context.obtainStyledAttributes(attributeSet, LAYOUT_ATTRS)
         isEnabled = a.getBoolean(0, true)
         a.recycle()
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int, defStyleRes: Int) : super(context, attributeSet, defStyleAttr, defStyleRes)
+
+    override fun getChildDrawingOrder(childCount: Int, i: Int): Int {
+        return when {
+            mCircleViewIndex < 0 -> i
+            i == childCount - 1 -> // Draw the selected child last
+                mCircleViewIndex
+            i >= mCircleViewIndex -> // Move the children after the selected child earlier one
+                i + 1
+            else -> // Keep the children before the selected child the same
+                i
+        }
+    }
 
     private fun createProgressView() {
         mCircleView = CircleImageView(context, CIRCLE_BG_LIGHT)
+        mFooterView = SuperSwipeRefreshLayoutFootView(context)
         mProgress = CircularProgressDrawable(context)
-        mProgress?.setStyle(CircularProgressDrawable.DEFAULT)
-        mCircleView?.setImageDrawable(mProgress)
-        mCircleView?.visibility = View.GONE
+        mProgress.setStyle(CircularProgressDrawable.DEFAULT)
+        mCircleView.setImageDrawable(mProgress)
+        mCircleView.visibility = View.GONE
         addView(mCircleView)
+        addView(mFooterView)
     }
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        mContentView?.let {
-            val childLeft = paddingLeft
-            val childTop = paddingTop
-            val childWidth = measuredWidth - paddingLeft - paddingRight
-            val childHeight = measuredHeight - paddingTop - paddingBottom
-            it.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
-        }
-        mCircleView?.let {
-            val circleWidth = it.measuredWidth
-            val circleHeight = it.measuredHeight
-            it.layout(width / 2 - circleWidth / 2, mCurrentTargetOffsetTop,
-                    width / 2 + circleWidth / 2, mCurrentTargetOffsetTop + circleHeight)
-        }
+    fun setOnRefreshListener(listener: SuperSwipeRefreshLayout.OnRefreshListener?) {
+        mListener = listener
     }
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        if (mContentView == null) {
-            ensureTarget()
-        }
-        if (mContentView == null) return
-
-        mContentView?.measure(View.MeasureSpec.makeMeasureSpec(
-                measuredWidth - paddingLeft - paddingRight,
-                View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(
-                measuredHeight - paddingTop - paddingBottom, View.MeasureSpec.EXACTLY))
-
-        mCircleView?.measure(View.MeasureSpec.makeMeasureSpec(mCircleDiameter, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(mCircleDiameter, View.MeasureSpec.EXACTLY))
-
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        reset()
-    }
-
-    fun setProgressViewOffset(scale: Boolean, start: Int, end: Int) {
-        mScale = scale
-        mOriginalOffsetTop = start
-        mSpinnerOffsetEnd = end
-        mUsingCustomStart = true
-        reset()
-        mRefreshing = false
-    }
-
-    fun getProgressViewStartOffset(): Int {
-        return mOriginalOffsetTop
-    }
-
-    fun getProgressViewEndOffset(): Int {
-        return mSpinnerOffsetEnd
-    }
-
-    fun setProgressViewEndTarget(scale: Boolean, end: Int) {
-        mSpinnerOffsetEnd = end
-        mScale = scale
-        mCircleView?.invalidate()
-    }
-
-
-    /**
-     * One of DEFAULT, or LARGE.
-     *
-     */
-    fun setSize(size: Int) {
-        if (size != CircularProgressDrawable.LARGE && size != CircularProgressDrawable.DEFAULT) {
-            return
-        }
-        val metrics = resources.displayMetrics
-        mCircleDiameter = if (size == CircularProgressDrawable.LARGE) {
-            (CIRCLE_DIAMETER_LARGE * metrics.density).toInt()
-        } else {
-            (CIRCLE_DIAMETER * metrics.density).toInt()
-        }
-        // force the bounds of the progress circle inside the circle view to
-        // update by setting it to null before updating its size and then
-        // re-setting it
-        mCircleView?.setImageDrawable(null)
-        mProgress?.setStyle(size)
-        mCircleView?.setImageDrawable(mProgress)
-    }
-
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        return super.dispatchTouchEvent(ev)
-    }
-
-
-    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        //获取手势动作
-        val action = ev.actionMasked
-        val pointerIndex: Int
-
-        if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
-            mReturningToStart = false
-        }
-
-        val b = canChildScrollUp() && canChildScrollDown()
-        if (!isEnabled || b || mReturningToStart
-                || mRefreshing || mNestedScrollInProgress) {
-            // Fail fast if we're not in a state where a swipe is possible
-            LogUtil.e("onInterceptTouchEvent mRefreshing:$mRefreshing")
-            LogUtil.e("onInterceptTouchEvent canChildScrollUpcan:$b")
-            LogUtil.e("onInterceptTouchEvent mRefreshing:$mReturningToStart")
-            LogUtil.e("onInterceptTouchEvent mRefreshing:$mNestedScrollInProgress")
-            return false
-        }
-        when (action) {
-            MotionEvent.ACTION_DOWN -> {
-                moveToStart()
-                //得到第一个手指
-                mActivePointerId = ev.getPointerId(0)
-                pointerIndex = ev.findPointerIndex(mActivePointerId)
-                if (pointerIndex < 0) {
-                    return false
-                }
-                mInitialDownY = ev.getY(pointerIndex)
-            }
-            MotionEvent.ACTION_MOVE -> {
-                if (mActivePointerId == INVALID_POINTER) {
-                    LogUtil.e("Got ACTION_MOVE event but don't have an active pointer id.")
-                    return false
-                }
-                pointerIndex = ev.findPointerIndex(mActivePointerId)
-                if (pointerIndex < 0) {
-                    return false
-                }
-                var offsetY = ev.getY(pointerIndex) - mInitialDownY
-                if (!canChildScrollUp()) {
-                    //若是顶部不能滑动，则offsetY是正值，直接与mTouchSlop做比较。
-                }
-                if (!canChildScrollDown()) {
-                    //若是底部不能滑动，则offsetY是负值，取反后与mTouchSlop做比较。
-                    offsetY = -offsetY
-                }
-                if (offsetY > mTouchSlop && !mIsBeingDragged) {
-                    startDragging(offsetY)
-                }
-            }
-            MotionEvent.ACTION_POINTER_UP -> {
-                //有手指抬起
-                onSecondaryPointerUp(ev)
-            }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                mIsBeingDragged = false
-                mActivePointerId = INVALID_POINTER
+    private fun startScaleUpAnimation(listener: Animation.AnimationListener?) {
+        mCircleView.visibility = View.VISIBLE
+        mProgress.alpha = MAX_ALPHA
+        mScaleAnimation = object : Animation() {
+            public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
+                setAnimationProgress(interpolatedTime)
             }
         }
-        return mIsBeingDragged
+        mScaleAnimation!!.duration = mMediumAnimationDuration.toLong()
+        if (listener != null) {
+            mCircleView.setAnimationListener(listener)
+        }
+        mCircleView.clearAnimation()
+        mCircleView.startAnimation(mScaleAnimation)
     }
 
-    /**
-     * 第二个手指抬起 出入 SwipeRefreshLayout
-     */
-    private fun onSecondaryPointerUp(ev: MotionEvent) {
-        val pointerIndex = ev.actionIndex
-        val pointerId = ev.getPointerId(pointerIndex)
-        if (pointerId == mActivePointerId) {
-            // This was our active pointer going up. Choose a new
-            // active pointer and adjust accordingly.
-            val newPointerIndex = if (pointerIndex == 0) 1 else 0
-            mActivePointerId = ev.getPointerId(newPointerIndex)
-        }
-    }
-
-    /**
-     * 移动目标view到初始位置
-     */
-    private fun moveToStart() {
-        val offset = mOriginalOffsetTop - mCircleView!!.top
-        setTargetOffsetTopAndBottom(offset)
-    }
-
-    /**
-     * 移动某个view，移动的距离。此时移动的是mRefreshView，由于此时改变了mCurrentTargetOffsetTop的值，
-     * 而且onMeasure方法和onLayout方法会执行，所以其他view也会移动
-     */
-    private fun setTargetOffsetTopAndBottom(offset: Int) {
-        mCircleView?.bringToFront()
-        ViewCompat.offsetTopAndBottom(mCircleView, offset)
-        mCurrentTargetOffsetTop = mCircleView!!.top
-    }
-
-    override fun onTouchEvent(ev: MotionEvent): Boolean {
-        //获取手势动作
-        val action = ev.actionMasked
-        val pointerIndex: Int
-//        if (!isEnabled || (canChildScrollUp() && canChildScrollDown())
-//                || mRefreshing || isLoadingMore) {
-//            return false
-//        }
-
-
-        if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
-            mReturningToStart = false
-        }
-
-        val b = canChildScrollUp() && canChildScrollDown()
-        if (!isEnabled || b || mReturningToStart
-                || mRefreshing || mNestedScrollInProgress) {
-            // Fail fast if we're not in a state where a swipe is possible
-            LogUtil.e("mRefreshing:$mRefreshing")
-            LogUtil.e("canChildScrollUpcan:$b")
-            LogUtil.e("mRefreshing:$mReturningToStart")
-            LogUtil.e("mRefreshing:$mNestedScrollInProgress")
-            return false
-        }
-
-
-
-        when (action) {
-            MotionEvent.ACTION_DOWN -> {
-                mActivePointerId = ev.getPointerId(0)
-                mIsBeingDragged = false
-            }
-            MotionEvent.ACTION_MOVE -> {
-                pointerIndex = ev.findPointerIndex(mActivePointerId)
-                if (pointerIndex < 0) {
-                    return false
-                }
-                var offsetY = ev.getY(pointerIndex) - mInitialDownY
-                if (!canChildScrollUp()) {
-                    //若是顶部不能滑动，则yDiff是正值，直接与mTouchSlop做比较。
-                }
-                if (!canChildScrollDown()) {
-                    //若是底部不能滑动，则yDiff是负值，取反后与mTouchSlop做比较。
-                    offsetY = -offsetY
-                }
-                if (offsetY > mTouchSlop && !mIsBeingDragged) {
-                    startDragging(offsetY)
-                }
-                if (mIsBeingDragged) {
-                    /**滑动的距离，向下滑动为正，向下滑动为负 */
-                    val overScrollTop = (ev.getY(pointerIndex) - mInitialMotionY) * 0.5f
-                    if (overScrollTop > 0 && !canChildScrollUp()) {
-                        //加载更多
-                        moveSpinner(overScrollTop)
-//                        LogUtil.e("下拉刷新")
-                    } else if (overScrollTop < 0 && !canChildScrollDown()) {
-                        //当处于底部，且有滑动的趋势直接加载更多。
-                        loadMore()
-                    } else {
-                        return false
-                    }
-                }
-            }
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                pointerIndex = ev.actionIndex
-                if (pointerIndex < 0) {
-                    return false
-                }
-                mActivePointerId = ev.getPointerId(pointerIndex)
-            }
-
-            MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
-
-            MotionEvent.ACTION_UP -> {
-                pointerIndex = ev.findPointerIndex(mActivePointerId)
-                if (pointerIndex < 0) {
-                    return false
-                }
-                if (mIsBeingDragged) {
-
-                    val overScrollTop = (ev.getY(pointerIndex) - mInitialMotionY) * 0.5f
-                    mIsBeingDragged = false
-                    LogUtil.e("Super onTouchEvent:$overScrollTop")
-                    finishSpinner(overScrollTop)
-                }
-                mActivePointerId = INVALID_POINTER
-                return false
-            }
-            MotionEvent.ACTION_CANCEL -> return false
-        }
-        return true
-    }
-
-    /**
-     * 开始拖动
-     */
-    private fun startDragging(offsetY: Float) {
-        if (offsetY > mTouchSlop && !mIsBeingDragged) {
-            mInitialMotionY = mInitialDownY + mTouchSlop
-            mIsBeingDragged = true
-            mProgress?.alpha = STARTING_PROGRESS_ALPHA
-        }
-    }
-
-
-    /**
-     *下拉刷新
-     */
-    private fun moveSpinner(overScrollTop: Float) {
-        mProgress?.arrowEnabled = true
-        val originalDragPercent = overScrollTop / mTotalDragDistance
-        val dragPercent = Math.min(1f, Math.abs(originalDragPercent))
-        val adjustedPercent = Math.max(dragPercent - .4, 0.0).toFloat() * 5 / 3
-        val extraOS = Math.abs(overScrollTop) - mTotalDragDistance
-        val slingshotDist = (if (mUsingCustomStart) mSpinnerOffsetEnd - mOriginalOffsetTop else
-            mSpinnerOffsetEnd).toFloat()
-        val tensionSlingshotPercent = Math.max(0f, Math.min(extraOS, slingshotDist * 2) / slingshotDist)
-        val tensionPercent = (tensionSlingshotPercent / 4 - Math.pow(
-                (tensionSlingshotPercent / 4).toDouble(), 2.0)).toFloat() * 2f
-        val extraMove = slingshotDist * tensionPercent * 2f
-
-        val targetY = mOriginalOffsetTop + (slingshotDist * dragPercent + extraMove).toInt()
-        // where 1.0f is a full circle
-        if (mCircleView?.visibility != View.VISIBLE) {
-            mCircleView?.visibility = View.VISIBLE
-        }
-        if (!mScale) {
-            mCircleView?.scaleX = 1f
-            mCircleView?.scaleY = 1f
-        }
-        if (mScale) {
-            setAnimationProgress(Math.min(1f, overScrollTop / mTotalDragDistance))
-        }
-        if (overScrollTop < mTotalDragDistance) {
-            if (mProgress?.alpha!! > STARTING_PROGRESS_ALPHA && !isAnimationRunning(mAlphaStartAnimation)) {
-                LogUtil.e("Super startProgressAlphaStartAnimation:${mProgress!!.alpha}")
-                startProgressAlphaStartAnimation()
-            }
-        } else {
-            if (mProgress!!.alpha < MAX_ALPHA && !isAnimationRunning(mAlphaMaxAnimation)) {
-                LogUtil.e("Super startProgressAlphaMaxAnimation:${mProgress!!.alpha}")
-                startProgressAlphaMaxAnimation()
-            }
-        }
-        val strokeStart = adjustedPercent * .8f
-        mProgress?.setStartEndTrim(0f, Math.min(MAX_PROGRESS_ANGLE, strokeStart))
-        mProgress?.arrowScale = Math.min(1f, adjustedPercent)
-        val rotation = (-0.25f + .4f * adjustedPercent + tensionPercent * 2) * .5f
-        mProgress?.progressRotation = rotation
-        setTargetOffsetTopAndBottom(targetY - mCurrentTargetOffsetTop)
-    }
-
-    private fun setColorViewAlpha(targetAlpha: Int) {
-        mCircleView!!.background.alpha = targetAlpha
-        mProgress!!.alpha = targetAlpha
-    }
-
-    /**
-     * Notify the widget that refresh state has changed. Do not call this when
-     * refresh is triggered by a swipe gesture.
-     *
-     * @param refreshing Whether or not the view should show refresh progress.
-     */
-    fun setRefreshing(refreshing: Boolean) {
-        if (refreshing && mRefreshing != refreshing) {
-            // scale and show
-            mRefreshing = refreshing
-            val endTarget: Int = if (!mUsingCustomStart) {
-                mSpinnerOffsetEnd + mOriginalOffsetTop
-            } else {
-                mSpinnerOffsetEnd
-            }
-            setTargetOffsetTopAndBottom(endTarget - mCurrentTargetOffsetTop)
-            mNotify = false
-            startScaleUpAnimation(mRefreshListener)
-        } else {
-            setRefreshing(refreshing, false /* notify */)
-        }
+    private fun setAnimationProgress(progress: Float) {
+        mCircleView.scaleX = progress
+        mCircleView.scaleY = progress
     }
 
     private fun setRefreshing(refreshing: Boolean, notify: Boolean) {
         if (mRefreshing != refreshing) {
-            LogUtil.e("Super setRefreshing refreshing $refreshing")
-            LogUtil.e("Super setRefreshing mRefreshing $refreshing")
             mNotify = notify
             ensureTarget()
             mRefreshing = refreshing
@@ -572,213 +363,155 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
                 setAnimationProgress(1 - interpolatedTime)
             }
         }
-        (mScaleDownAnimation as Animation).duration = SCALE_DOWN_DURATION
-        mCircleView!!.setAnimationListener(listener)
-        mCircleView!!.clearAnimation()
-        mCircleView!!.startAnimation(mScaleDownAnimation)
-    }
-
-    private val mAnimateToCorrectPosition = object : Animation() {
-        public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-            val targetTop: Int
-            val endTarget = if (!mUsingCustomStart) {
-                mSpinnerOffsetEnd - Math.abs(mOriginalOffsetTop)
-            } else {
-                mSpinnerOffsetEnd
-            }
-            targetTop = mFrom + ((endTarget - mFrom) * interpolatedTime).toInt()
-            val offset = targetTop - mCircleView!!.top
-            setTargetOffsetTopAndBottom(offset)
-            mProgress!!.arrowScale = 1 - interpolatedTime
-        }
-    }
-
-    private fun animateOffsetToCorrectPosition(from: Int, listener: AnimationListener?) {
-        mFrom = from
-        mAnimateToCorrectPosition.reset()
-        mAnimateToCorrectPosition.duration = ANIMATE_TO_TRIGGER_DURATION
-        mAnimateToCorrectPosition.interpolator = mDecelerateInterpolator
-        if (listener != null) {
-            LogUtil.e("Super listener 不为空")
-            mCircleView!!.setAnimationListener(listener)
-        }
-        mCircleView!!.clearAnimation()
-        mCircleView!!.startAnimation(mAnimateToCorrectPosition)
-    }
-
-    private fun startScaleUpAnimation(listener: AnimationListener) {
-        mCircleView!!.visibility = View.VISIBLE
-        mProgress!!.alpha = MAX_ALPHA
-        mScaleAnimation = object : Animation() {
-            public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-                setAnimationProgress(interpolatedTime)
-            }
-        }
-        (mScaleAnimation as Animation).duration = mMediumAnimationDuration.toLong()
-        mCircleView?.setAnimationListener(listener)
-        mCircleView!!.clearAnimation()
-        mCircleView!!.startAnimation(mScaleAnimation)
-    }
-
-    private fun startProgressAlphaMaxAnimation() {
-        mAlphaMaxAnimation = startAlphaAnimation(mProgress?.alpha!!, MAX_ALPHA)
+        mScaleDownAnimation!!.duration = SCALE_DOWN_DURATION.toLong()
+        mCircleView.setAnimationListener(listener)
+        mCircleView.clearAnimation()
+        mCircleView.startAnimation(mScaleDownAnimation)
     }
 
     private fun startProgressAlphaStartAnimation() {
-        mAlphaStartAnimation = startAlphaAnimation(mProgress!!.alpha, STARTING_PROGRESS_ALPHA)
+        mAlphaStartAnimation = startAlphaAnimation(mProgress.alpha, STARTING_PROGRESS_ALPHA)
+    }
+
+    private fun startProgressAlphaMaxAnimation() {
+        mAlphaMaxAnimation = startAlphaAnimation(mProgress.alpha, MAX_ALPHA)
     }
 
     private fun startAlphaAnimation(startingAlpha: Int, endingAlpha: Int): Animation {
         val alpha = object : Animation() {
             public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-                mProgress?.alpha = (startingAlpha + (endingAlpha - startingAlpha) * interpolatedTime).toInt()
+                mProgress.alpha = (startingAlpha + (endingAlpha - startingAlpha) * interpolatedTime).toInt()
             }
         }
-        alpha.duration = ALPHA_ANIMATION_DURATION
+        alpha.duration = ALPHA_ANIMATION_DURATION.toLong()
         // Clear out the previous animation listeners.
-        mCircleView?.setAnimationListener(null)
-        mCircleView?.clearAnimation()
-        mCircleView?.startAnimation(alpha)
+        mCircleView.setAnimationListener(null)
+        mCircleView.clearAnimation()
+        mCircleView.startAnimation(alpha)
         return alpha
     }
 
-    private fun isAnimationRunning(animation: Animation?): Boolean {
-        return animation != null && animation.hasStarted() && !animation.hasEnded()
+
+    @Deprecated("Use {@link #setProgressBackgroundColorSchemeResource(int)}")
+    fun setProgressBackgroundColor(colorRes: Int) {
+        setProgressBackgroundColorSchemeResource(colorRes)
     }
 
-    /**
-     * Pre API 11, this does an alpha animation.
-     * @param progress
-     */
-    private fun setAnimationProgress(progress: Float) {
-        mCircleView?.scaleX = progress
-        mCircleView?.scaleY = progress
+    fun setProgressBackgroundColorSchemeResource(@ColorRes colorRes: Int) {
+        setProgressBackgroundColorSchemeColor(ContextCompat.getColor(context, colorRes))
     }
 
-    /**
-     * 回弹效果
-     */
-    private fun finishSpinner(overScrollTop: Float) {
-        LogUtil.e("Super onStopNestedScroll:$mTotalDragDistance")
-        if (overScrollTop > mTotalDragDistance) {
-            setRefreshing(true, true /* notify */)
-        } else {
-            LogUtil.e("finishSpinner   else")
-            // cancel refresh
-            mRefreshing = false
-            mProgress?.setStartEndTrim(0f, 0f)
-            var listener: Animation.AnimationListener? = null
-            if (!mScale) {
-                listener = object : Animation.AnimationListener {
-                    override fun onAnimationStart(animation: Animation) {}
-                    override fun onAnimationEnd(animation: Animation) {
-                        if (!mScale) {
-                            startScaleDownAnimation(null)
-                        }
-                    }
+    fun setProgressBackgroundColorSchemeColor(@ColorInt color: Int) {
+        mCircleView.setBackgroundColor(color)
+    }
 
-                    override fun onAnimationRepeat(animation: Animation) {}
+    @Deprecated("")
+    fun setColorScheme(@ColorRes vararg colors: Int) {
+        setColorSchemeResources(*colors)
+    }
+
+    fun setColorSchemeResources(@ColorRes vararg colorResIds: Int) {
+        val context = context
+        val colorRes = IntArray(colorResIds.size)
+        for (i in colorResIds.indices) {
+            colorRes[i] = ContextCompat.getColor(context, colorResIds[i])
+        }
+        setColorSchemeColors(*colorRes)
+    }
+
+    fun setColorSchemeColors(@ColorInt vararg colors: Int) {
+        ensureTarget()
+        mProgress.setColorSchemeColors(*colors)
+    }
+
+
+    /**
+     * 找到内容view 被包裹的内容
+     */
+    private fun ensureTarget() {
+        // Don't bother getting the parent height if the parent hasn't been laid
+        // out yet.
+        if (mContentView == null) {
+            for (i in 0 until childCount) {
+                val child = getChildAt(i)
+                if (child != mCircleView) {
+                    mContentView = child
+                    break
                 }
             }
-            animateOffsetToStartPosition(mCurrentTargetOffsetTop, listener)
-            mProgress?.arrowEnabled = false
         }
     }
 
-    private fun animateOffsetToStartPosition(from: Int, listener: AnimationListener?) {
-        LogUtil.e("animateOffsetToStartPosition ")
-        if (mScale) {
-            // Scale the item back down
-            startScaleDownReturnToStartAnimation(from, listener)
-        } else {
-            mFrom = from
-            mAnimateToStartPosition.reset()
-            mAnimateToStartPosition.duration = ANIMATE_TO_START_DURATION
-            mAnimateToStartPosition.interpolator = mDecelerateInterpolator
-            if (listener != null) {
-                mCircleView!!.setAnimationListener(listener)
+    fun setDistanceToTriggerSync(distance: Int) {
+        mTotalDragDistance = distance.toFloat()
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        if (childCount == 0) {
+            return
+        }
+        if (mContentView == null) {
+            ensureTarget()
+        }
+        if (mContentView == null) {
+            return
+        }
+        mContentView?.let {
+            val childLeft = paddingLeft
+            val childTop = paddingTop
+            val childWidth = measuredWidth - paddingLeft - paddingRight
+            val childHeight = measuredHeight - paddingTop - paddingBottom
+            it.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
+        }
+        mCircleView?.let {
+            val circleWidth = it.measuredWidth
+            val circleHeight = it.measuredHeight
+            it.layout(width / 2 - circleWidth / 2, mCurrentTargetOffsetTop,
+                    width / 2 + circleWidth / 2, mCurrentTargetOffsetTop + circleHeight)
+        }
+
+        mFooterView.let {
+            val footerViewTop = measuredHeight - paddingTop - paddingBottom + mCurrentTargetOffsetTop
+            val footViewLeft = (width - mFooterView.measuredWidth) / 2
+            mFooterView.layout(footerViewTop,footerViewTop,footViewLeft + mFooterView.measuredWidth,footerViewTop+mFooterView.measuredHeight)
+        }
+
+    }
+
+    public override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        if (mContentView == null) {
+            ensureTarget()
+        }
+        if (mContentView == null) {
+            return
+        }
+        mContentView!!.measure(View.MeasureSpec.makeMeasureSpec(
+                measuredWidth - paddingLeft - paddingRight,
+                View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(
+                measuredHeight - paddingTop - paddingBottom, View.MeasureSpec.EXACTLY))
+        mCircleView.measure(View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY))
+        mFooterView.measure(widthMeasureSpec,heightMeasureSpec)
+        mCircleViewIndex = -1
+        // Get the index of the circleview.
+        for (index in 0 until childCount) {
+            if (getChildAt(index) === mCircleView) {
+                mCircleViewIndex = index
+                break
             }
-            mCircleView!!.clearAnimation()
-            mCircleView!!.startAnimation(mAnimateToStartPosition)
-        }
-    }
-
-    private val mAnimateToStartPosition = object : Animation() {
-        public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-            moveToStart(interpolatedTime)
-        }
-    }
-
-    private fun moveToStart(interpolatedTime: Float) {
-        val targetTop = mFrom + ((mOriginalOffsetTop - mFrom) * interpolatedTime).toInt()
-        val offset = targetTop - mCircleView!!.top
-        setTargetOffsetTopAndBottom(offset)
-    }
-
-    private fun startScaleDownReturnToStartAnimation(from: Int, listener: Animation.AnimationListener?) {
-        mFrom = from
-        mStartingScale = mCircleView!!.scaleX
-        mScaleDownToStartAnimation = object : Animation() {
-            public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-                val targetScale = mStartingScale + -mStartingScale * interpolatedTime
-                setAnimationProgress(targetScale)
-                moveToStart(interpolatedTime)
-            }
-        }
-        (mScaleDownToStartAnimation as Animation).duration = SCALE_DOWN_DURATION
-        if (listener != null) {
-            mCircleView!!.setAnimationListener(listener)
-        }
-        LogUtil.e("startScaleDownReturnToStartAnimation ")
-        mCircleView!!.clearAnimation()
-        mCircleView!!.startAnimation(mScaleDownToStartAnimation)
-    }
-
-    /**
-     * 上拉加载更多
-     */
-    private fun loadMore() {
-        if (!isLoadingMore) {
-            LogUtil.e("加载更多")
-//            if (mLoadMoreListener != null) {
-            animateOffsetFromToTarget(mCurrentTargetOffsetTop, mCurrentTargetOffsetTop - mInitialScrollUpY, null)
-//                mLoadMoreListener.onLoad()
-//                isLoadingMore = true
-//            }
         }
     }
 
     /**
-     * 从x位置移动到y位置，并伴随动画监听器
-     */
-    private fun animateOffsetFromToTarget(fromPosition: Int, targetPosition: Int, listener: AnimationListener?) {
-        val animateFromToTarget = AnimateFromToTarget(fromPosition, targetPosition)
-        animateFromToTarget.duration = 200
-        animateFromToTarget.interpolator = mDecelerateInterpolator
-        if (listener != null) {
-            animateFromToTarget.setAnimationListener(listener)
-        }
-        mContentView?.clearAnimation()
-        mContentView?.startAnimation(animateFromToTarget)
-    }
-
-    /**
-     * 移动动画
-     */
-    private inner class AnimateFromToTarget(var mFromPosition: Int, var mTargetPosition: Int) : Animation() {
-        override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-            val targetTop: Int = mFromPosition + ((mTargetPosition - mFromPosition) * interpolatedTime).toInt()
-            val offset = targetTop - mContentView!!.top
-            setTargetOffsetTopAndBottom(offset)
-        }
-    }
-
-    /**
-     * 判断view向上是否可以滑动
+     * 判断view向下是否可以滑动
      */
     private fun canChildScrollUp(): Boolean {
+        if (mChildScrollUpCallback != null) {
+            return mChildScrollUpCallback!!.canChildScrollUp(this, mContentView)
+        }
         return if (mContentView is ListView) {
-            ListViewCompat.canScrollList(mContentView as ListView, -1)
+            ListViewCompat.canScrollList((mContentView as ListView?)!!, -1)
         } else mContentView!!.canScrollVertically(-1)
     }
 
@@ -789,27 +522,73 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         return mContentView!!.canScrollVertically(1)
     }
 
-    /**
-     * 完成绘制时
-     */
-    override fun onFinishInflate() {
-        super.onFinishInflate()
+
+    fun setOnChildScrollUpCallback(callback: SuperSwipeRefreshLayout.OnChildScrollUpCallback?) {
+        mChildScrollUpCallback = callback
     }
 
-    /**
-     * 找到内容view 被包裹的内容
-     */
-    private fun ensureTarget() {
-        // Don't bother getting the parent height if the parent hasn't been laid out yet.
-        if (mContentView == null) {
-            for (i in 0 until childCount) {
-                val child = getChildAt(i)
-                if (child != mCircleView) {
-                    mContentView = child
-                    break
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        ensureTarget()
+
+        val action = ev.actionMasked
+        val pointerIndex: Int
+
+        if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
+            mReturningToStart = false
+        }
+
+        if (!isEnabled || mReturningToStart || (canChildScrollUp() && canChildScrollDown())
+                || mRefreshing || mNestedScrollInProgress || isLoadingMore) {
+            // Fail fast if we're not in a state where a swipe is possible
+            return false
+        }
+
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                setTargetOffsetTopAndBottom(progressViewStartOffset - mCircleView.top)
+                //得到第一个手指
+                mActivePointerId = ev.getPointerId(0)
+                mIsBeingDragged = false
+
+                pointerIndex = ev.findPointerIndex(mActivePointerId)
+                if (pointerIndex < 0) {
+                    return false
+                }
+                mInitialDownY = ev.getY(pointerIndex)
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (mActivePointerId == INVALID_POINTER) {
+                    Log.e(LOG_TAG, "Got ACTION_MOVE event but don't have an active pointer id.")
+                    return false
+                }
+
+                pointerIndex = ev.findPointerIndex(mActivePointerId)
+                if (pointerIndex < 0) {
+                    return false
+                }
+                var offsetY = ev.getY(pointerIndex) - mInitialDownY
+                if (!canChildScrollUp()) {
+                    //若是顶部不能滑动，则offsetY是正值，直接与mTouchSlop做比较。
+                }
+                if (!canChildScrollDown()) {
+                    //若是底部不能滑动，则offsetY是负值，取反后与mTouchSlop做比较。
+                    offsetY = -offsetY
+                }
+                if (offsetY > mTouchSlop && !mIsBeingDragged) {
+                    startDragging(offsetY)
                 }
             }
+        //有手指抬起
+            MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                mIsBeingDragged = false
+                mActivePointerId = INVALID_POINTER
+            }
         }
+
+        return mIsBeingDragged
     }
 
     override fun requestDisallowInterceptTouchEvent(b: Boolean) {
@@ -823,6 +602,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         }
     }
 
+    // NestedScrollingParent
 
     override fun onStartNestedScroll(child: View, target: View, nestedScrollAxes: Int): Boolean {
         return (isEnabled && !mReturningToStart && !mRefreshing
@@ -831,7 +611,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     override fun onNestedScrollAccepted(child: View, target: View, axes: Int) {
         // Reset the counter of how much leftover scroll needs to be consumed.
-        mNestedScrollingParentHelper?.onNestedScrollAccepted(child, target, axes)
+        mNestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes)
         // Dispatch up to the nested parent
         startNestedScroll(axes and ViewCompat.SCROLL_AXIS_VERTICAL)
         mTotalUnconsumed = 0f
@@ -858,7 +638,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         // the circle so it isn't exposed if its blocking content is moved
         if (mUsingCustomStart && dy > 0 && mTotalUnconsumed == 0f
                 && Math.abs(dy - consumed[1]) > 0) {
-            mCircleView?.visibility = View.GONE
+            mCircleView.visibility = View.GONE
         }
 
         // Now let our nested parent consume the leftovers
@@ -870,16 +650,15 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     }
 
     override fun getNestedScrollAxes(): Int {
-        return mNestedScrollingParentHelper!!.nestedScrollAxes
+        return mNestedScrollingParentHelper.nestedScrollAxes
     }
 
     override fun onStopNestedScroll(target: View) {
-        mNestedScrollingParentHelper?.onStopNestedScroll(target)
+        mNestedScrollingParentHelper.onStopNestedScroll(target)
         mNestedScrollInProgress = false
         // Finish the spinner for nested scrolling if we ever consumed any
         // unconsumed nested scroll
         if (mTotalUnconsumed > 0) {
-            LogUtil.e("Super onStopNestedScroll:$mTotalUnconsumed")
             finishSpinner(mTotalUnconsumed)
             mTotalUnconsumed = 0f
         }
@@ -889,7 +668,6 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     override fun onNestedScroll(target: View, dxConsumed: Int, dyConsumed: Int,
                                 dxUnconsumed: Int, dyUnconsumed: Int) {
-
         // Dispatch up to the nested parent first
         dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,
                 mParentOffsetInWindow)
@@ -900,48 +678,50 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         // 'offset in window 'functionality to see if we have been moved from the event.
         // This is a decent indication of whether we should take over the event stream or not.
         val dy = dyUnconsumed + mParentOffsetInWindow[1]
-        LogUtil.e("onNestedScroll：$dy")
-        LogUtil.e("onNestedScroll：$dyUnconsumed")
         if (dy < 0 && !canChildScrollUp()) {
             mTotalUnconsumed += Math.abs(dy).toFloat()
             moveSpinner(mTotalUnconsumed)
         }
+        LogUtil.e("dyUnconsumed:  $dyUnconsumed  ")
 
-        if (dyUnconsumed > 0 && !canChildScrollDown()) {
+        val b = !canChildScrollDown()
+        LogUtil.e("canChildScrollDown: $b")
+        if (dyUnconsumed > 0 && b) {
             loadMore()
         }
+
     }
 
     // NestedScrollingChild
 
     override fun setNestedScrollingEnabled(enabled: Boolean) {
-        mNestedScrollingChildHelper?.isNestedScrollingEnabled = enabled
+        mNestedScrollingChildHelper.isNestedScrollingEnabled = enabled
     }
 
     override fun isNestedScrollingEnabled(): Boolean {
-        return mNestedScrollingChildHelper!!.isNestedScrollingEnabled
+        return mNestedScrollingChildHelper.isNestedScrollingEnabled
     }
 
     override fun startNestedScroll(axes: Int): Boolean {
-        return mNestedScrollingChildHelper!!.startNestedScroll(axes)
+        return mNestedScrollingChildHelper.startNestedScroll(axes)
     }
 
     override fun stopNestedScroll() {
-        mNestedScrollingChildHelper!!.stopNestedScroll()
+        mNestedScrollingChildHelper.stopNestedScroll()
     }
 
     override fun hasNestedScrollingParent(): Boolean {
-        return mNestedScrollingChildHelper!!.hasNestedScrollingParent()
+        return mNestedScrollingChildHelper.hasNestedScrollingParent()
     }
 
     override fun dispatchNestedScroll(dxConsumed: Int, dyConsumed: Int, dxUnconsumed: Int,
                                       dyUnconsumed: Int, offsetInWindow: IntArray?): Boolean {
-        return mNestedScrollingChildHelper!!.dispatchNestedScroll(dxConsumed, dyConsumed,
+        return mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
                 dxUnconsumed, dyUnconsumed, offsetInWindow)
     }
 
     override fun dispatchNestedPreScroll(dx: Int, dy: Int, consumed: IntArray?, offsetInWindow: IntArray?): Boolean {
-        return mNestedScrollingChildHelper!!.dispatchNestedPreScroll(
+        return mNestedScrollingChildHelper.dispatchNestedPreScroll(
                 dx, dy, consumed, offsetInWindow)
     }
 
@@ -956,12 +736,302 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     }
 
     override fun dispatchNestedFling(velocityX: Float, velocityY: Float, consumed: Boolean): Boolean {
-        return mNestedScrollingChildHelper!!.dispatchNestedFling(velocityX, velocityY, consumed)
+        return mNestedScrollingChildHelper.dispatchNestedFling(velocityX, velocityY, consumed)
     }
 
     override fun dispatchNestedPreFling(velocityX: Float, velocityY: Float): Boolean {
-        return mNestedScrollingChildHelper!!.dispatchNestedPreFling(velocityX, velocityY)
+        return mNestedScrollingChildHelper.dispatchNestedPreFling(velocityX, velocityY)
     }
 
+    private fun isAnimationRunning(animation: Animation?): Boolean {
+        return animation != null && animation.hasStarted() && !animation.hasEnded()
+    }
+
+    private fun moveSpinner(overScrollTop: Float) {
+        mProgress.arrowEnabled = true
+        val originalDragPercent = overScrollTop / mTotalDragDistance
+
+        val dragPercent = Math.min(1f, Math.abs(originalDragPercent))
+        val adjustedPercent = Math.max(dragPercent - .4, 0.0).toFloat() * 5 / 3
+        val extraOS = Math.abs(overScrollTop) - mTotalDragDistance
+        val slingshotDist = (if (mUsingCustomStart)
+            progressViewEndOffset - progressViewStartOffset
+        else
+            progressViewEndOffset).toFloat()
+        val tensionSlingshotPercent = Math.max(0f, Math.min(extraOS, slingshotDist * 2) / slingshotDist)
+        val tensionPercent = (tensionSlingshotPercent / 4 - Math.pow(
+                (tensionSlingshotPercent / 4).toDouble(), 2.0)).toFloat() * 2f
+        val extraMove = slingshotDist * tensionPercent * 2f
+
+        val targetY = progressViewStartOffset + (slingshotDist * dragPercent + extraMove).toInt()
+        // where 1.0f is a full circle
+        if (mCircleView.visibility != View.VISIBLE) {
+            mCircleView.visibility = View.VISIBLE
+        }
+        if (!mScale) {
+            mCircleView.scaleX = 1f
+            mCircleView.scaleY = 1f
+        }
+
+        if (mScale) {
+            setAnimationProgress(Math.min(1f, overScrollTop / mTotalDragDistance))
+        }
+        if (overScrollTop < mTotalDragDistance) {
+            if (mProgress.alpha > STARTING_PROGRESS_ALPHA && !isAnimationRunning(mAlphaStartAnimation)) {
+                // Animate the alpha
+                startProgressAlphaStartAnimation()
+            }
+        } else {
+            if (mProgress.alpha < MAX_ALPHA && !isAnimationRunning(mAlphaMaxAnimation)) {
+                // Animate the alpha
+                startProgressAlphaMaxAnimation()
+            }
+        }
+        val strokeStart = adjustedPercent * .8f
+        mProgress.setStartEndTrim(0f, Math.min(MAX_PROGRESS_ANGLE, strokeStart))
+        mProgress.arrowScale = Math.min(1f, adjustedPercent)
+
+        val rotation = (-0.25f + .4f * adjustedPercent + tensionPercent * 2) * .5f
+        mProgress.progressRotation = rotation
+        setTargetOffsetTopAndBottom(targetY - mCurrentTargetOffsetTop)
+    }
+
+    private fun finishSpinner(overScrollTop: Float) {
+        if (overScrollTop > mTotalDragDistance) {
+            setRefreshing(true, true /* notify */)
+        } else {
+            // cancel refresh
+            mRefreshing = false
+            mProgress.setStartEndTrim(0f, 0f)
+            var listener: Animation.AnimationListener? = null
+            if (!mScale) {
+                listener = object : Animation.AnimationListener {
+
+                    override fun onAnimationStart(animation: Animation) {}
+
+                    override fun onAnimationEnd(animation: Animation) {
+                        if (!mScale) {
+                            startScaleDownAnimation(null)
+                        }
+                    }
+
+                    override fun onAnimationRepeat(animation: Animation) {}
+
+                }
+            }
+            animateOffsetToStartPosition(mCurrentTargetOffsetTop, listener)
+            mProgress.arrowEnabled = false
+        }
+    }
+
+    override fun onTouchEvent(ev: MotionEvent): Boolean {
+        val action = ev.actionMasked
+        var pointerIndex: Int
+
+        if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
+            mReturningToStart = false
+        }
+
+        if (!isEnabled || mReturningToStart || (canChildScrollUp() && canChildScrollDown())
+                || mRefreshing || mNestedScrollInProgress || isLoadingMore) {
+            // Fail fast if we're not in a state where a swipe is possible
+            return false
+        }
+
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                mActivePointerId = ev.getPointerId(0)
+                mIsBeingDragged = false
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                pointerIndex = ev.findPointerIndex(mActivePointerId)
+                if (pointerIndex < 0) {
+                    Log.e(LOG_TAG, "Got ACTION_MOVE event but have an invalid active pointer id.")
+                    return false
+                }
+                var offsetY = ev.getY(pointerIndex) - mInitialDownY
+                if (!canChildScrollUp()) {
+                    //若是顶部不能滑动，则yDiff是正值，直接与mTouchSlop做比较。
+                }
+                if (!canChildScrollDown()) {
+                    //若是底部不能滑动，则yDiff是负值，取反后与mTouchSlop做比较。
+                    offsetY = -offsetY
+                }
+                startDragging(offsetY)
+                if (mIsBeingDragged) {
+                    /**滑动的距离，向下滑动为正，向下滑动为负 */
+                    val overScrollTop = (y - mInitialMotionY) * DRAG_RATE
+                    if (overScrollTop > 0 && !canChildScrollUp()) {
+                        //加载更多
+                        moveSpinner(overScrollTop)
+                    } else if (overScrollTop < 0 && !canChildScrollDown()) {
+                        //当处于底部，且有滑动的趋势直接加载更多。
+                        loadMore()
+                    } else {
+                        return false
+                    }
+                }
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                pointerIndex = ev.actionIndex
+                if (pointerIndex < 0) {
+                    Log.e(LOG_TAG, "Got ACTION_POINTER_DOWN event but have an invalid action index.")
+                    return false
+                }
+                mActivePointerId = ev.getPointerId(pointerIndex)
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
+
+            MotionEvent.ACTION_UP -> {
+                pointerIndex = ev.findPointerIndex(mActivePointerId)
+                if (pointerIndex < 0) {
+                    Log.e(LOG_TAG, "Got ACTION_UP event but don't have an active pointer id.")
+                    return false
+                }
+                if (mIsBeingDragged) {
+                    val y = ev.getY(pointerIndex)
+                    val overScrollTop = (y - mInitialMotionY) * DRAG_RATE
+                    mIsBeingDragged = false
+                    finishSpinner(overScrollTop)
+                }
+                mActivePointerId = INVALID_POINTER
+                return false
+            }
+            MotionEvent.ACTION_CANCEL -> return false
+        }
+
+        return true
+    }
+
+    private fun animateOffsetToCorrectPosition(from: Int, listener: Animation.AnimationListener?) {
+        mFrom = from
+        mAnimateToCorrectPosition.reset()
+        mAnimateToCorrectPosition.duration = ANIMATE_TO_TRIGGER_DURATION.toLong()
+        mAnimateToCorrectPosition.interpolator = mDecelerateInterpolator
+        if (listener != null) {
+            mCircleView.setAnimationListener(listener)
+        }
+        mCircleView.clearAnimation()
+        mCircleView.startAnimation(mAnimateToCorrectPosition)
+    }
+
+    /**
+     * 开始拖动
+     */
+    private fun startDragging(offsetY: Float) {
+        if (offsetY > mTouchSlop && !mIsBeingDragged) {
+            mInitialMotionY = mInitialDownY + mTouchSlop
+            mIsBeingDragged = true
+            mProgress.alpha = STARTING_PROGRESS_ALPHA
+        }
+    }
+
+    /**
+     * 上拉加载更多
+     */
+    private fun loadMore() {
+        if (!isLoadingMore) {
+            LogUtil.e("加载更多")
+//            if (mLoadMoreListener != null) {
+            animateOffsetFromToTarget(mCurrentTargetOffsetTop, mCurrentTargetOffsetTop - mInitialScrollUpY, null)
+//                mLoadMoreListener.onLoad()
+//                isLoadingMore = true
+//            }
+        }
+    }
+
+    /**
+     * 从x位置移动到y位置，并伴随动画监听器
+     */
+    private fun animateOffsetFromToTarget(fromPosition: Int, targetPosition: Int, listener: Animation.AnimationListener?) {
+        val animateFromToTarget = AnimateFromToTarget(fromPosition, targetPosition)
+        animateFromToTarget.duration = 200
+        animateFromToTarget.interpolator = mDecelerateInterpolator
+        if (listener != null) {
+            animateFromToTarget.setAnimationListener(listener)
+        }
+        mContentView?.clearAnimation()
+        mContentView?.startAnimation(animateFromToTarget)
+    }
+
+    /**
+     * 移动动画
+     */
+    private inner class AnimateFromToTarget(var mFromPosition: Int, var mTargetPosition: Int) : Animation() {
+        override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
+            val targetTop: Int = mFromPosition + ((mTargetPosition - mFromPosition) * interpolatedTime).toInt()
+            val offset = targetTop - mContentView!!.top
+            setTargetOffsetTopAndBottom(offset)
+        }
+    }
+
+    private fun animateOffsetToStartPosition(from: Int, listener: Animation.AnimationListener?) {
+        if (mScale) {
+            // Scale the item back down
+            startScaleDownReturnToStartAnimation(from, listener)
+        } else {
+            mFrom = from
+            mAnimateToStartPosition.reset()
+            mAnimateToStartPosition.duration = ANIMATE_TO_START_DURATION.toLong()
+            mAnimateToStartPosition.interpolator = mDecelerateInterpolator
+            if (listener != null) {
+                mCircleView.setAnimationListener(listener)
+            }
+            mCircleView.clearAnimation()
+            mCircleView.startAnimation(mAnimateToStartPosition)
+        }
+    }
+
+    private fun moveToStart(interpolatedTime: Float) {
+        val targetTop = mFrom + ((progressViewStartOffset - mFrom) * interpolatedTime).toInt()
+        val offset = targetTop - mCircleView.top
+        setTargetOffsetTopAndBottom(offset)
+    }
+
+    private fun startScaleDownReturnToStartAnimation(from: Int, listener: Animation.AnimationListener?) {
+        mFrom = from
+        mStartingScale = mCircleView.scaleX
+        mScaleDownToStartAnimation = object : Animation() {
+            public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
+                val targetScale = mStartingScale + -mStartingScale * interpolatedTime
+                setAnimationProgress(targetScale)
+                moveToStart(interpolatedTime)
+            }
+        }
+        mScaleDownToStartAnimation?.duration = SCALE_DOWN_DURATION.toLong()
+        if (listener != null) {
+            mCircleView.setAnimationListener(listener)
+        }
+        mCircleView.clearAnimation()
+        mCircleView.startAnimation(mScaleDownToStartAnimation)
+    }
+
+    internal fun setTargetOffsetTopAndBottom(offset: Int) {
+        mCircleView.bringToFront()
+        ViewCompat.offsetTopAndBottom(mCircleView, offset)
+        mCurrentTargetOffsetTop = mCircleView.top
+    }
+
+    private fun onSecondaryPointerUp(ev: MotionEvent) {
+        val pointerIndex = ev.actionIndex
+        val pointerId = ev.getPointerId(pointerIndex)
+        if (pointerId == mActivePointerId) {
+            // This was our active pointer going up. Choose a new
+            // active pointer and adjust accordingly.
+            val newPointerIndex = if (pointerIndex == 0) 1 else 0
+            mActivePointerId = ev.getPointerId(newPointerIndex)
+        }
+    }
+
+    interface OnRefreshListener {
+        fun onRefresh()
+    }
+
+    interface OnChildScrollUpCallback {
+        fun canChildScrollUp(parent: SuperSwipeRefreshLayout, child: View?): Boolean
+    }
 
 }
+

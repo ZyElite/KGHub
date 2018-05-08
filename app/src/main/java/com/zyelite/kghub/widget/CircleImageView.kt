@@ -1,7 +1,6 @@
 package com.zyelite.kghub.widget
 
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.ShapeDrawable
@@ -13,19 +12,11 @@ import android.view.animation.Animation
 import android.widget.ImageView
 
 /**
- * Private class created to work around issues with AnimationListeners being
- * called before the animation is actually complete and support shadows on older
- * platforms.
- */
-
-
-/**
  * @author ZyElite
  * @create 2018/4/19
  * @description CircleImageView
  */
 
-@SuppressLint("ViewConstructor")
 class CircleImageView(context: Context, color: Int) : ImageView(context) {
     companion object {
         private const val KEY_SHADOW_COLOR = 0x1E000000
@@ -90,7 +81,7 @@ class CircleImageView(context: Context, color: Int) : ImageView(context) {
 
     public override fun onAnimationEnd() {
         super.onAnimationEnd()
-        if (mListener != null && animation != null) {
+        if (mListener != null ) {
             mListener!!.onAnimationEnd(animation)
         }
     }
