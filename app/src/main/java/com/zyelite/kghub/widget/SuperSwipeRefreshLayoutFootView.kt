@@ -25,7 +25,7 @@ class SuperSwipeRefreshLayoutFootView(context: Context?) : LinearLayout(context)
         footViewHeight = (50 * metrics.density).toInt()
     }
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, View.MeasureSpec.makeMeasureSpec(footViewHeight, View.MeasureSpec.EXACTLY))
-    }
+//    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+//        super.onMeasure(widthMeasureSpec, View.MeasureSpec.makeMeasureSpec(footViewHeight, View.MeasureSpec.EXACTLY))
+//    }
 }

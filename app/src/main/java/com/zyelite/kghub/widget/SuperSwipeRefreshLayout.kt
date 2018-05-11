@@ -21,6 +21,7 @@ import android.widget.AbsListView
 import android.widget.ListView
 import com.zyelite.kghub.utils.LogUtil
 
+
 /**
  * @author ZyElite
  * @create 2018/5/8
@@ -65,7 +66,11 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     private val LAYOUT_ATTRS = intArrayOf(android.R.attr.enabled)
 
     private var mContentView: View? = null // the target of the gesture
+
     private var mListener: SuperSwipeRefreshLayout.OnRefreshListener? = null
+    private var mLoadMoreListener: OnLoadMoreListener? = null
+
+
     //是否刷新
     private var mRefreshing = false
     //加载更多
@@ -127,7 +132,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     private var mNotify: Boolean = false
 
-    private var progressCircleDiameter: Int = 0
+    private var  progressCircleDiameter: Int = 0
 
     // Whether the client has set a custom starting position;
     private var mUsingCustomStart: Boolean = false
@@ -177,12 +182,11 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     private val mAnimateToCorrectPosition = object : Animation() {
         public override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-            var targetTop = 0
-            var endTarget = 0
-            if (!mUsingCustomStart) {
-                endTarget = progressViewEndOffset - Math.abs(progressViewStartOffset)
+            val targetTop: Int
+            val endTarget: Int = if (!mUsingCustomStart) {
+                progressViewEndOffset - Math.abs(progressViewStartOffset)
             } else {
-                endTarget = progressViewEndOffset
+                progressViewEndOffset
             }
             targetTop = mFrom + ((endTarget - mFrom) * interpolatedTime).toInt()
             val offset = targetTop - mCircleView.top
@@ -434,7 +438,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         if (mContentView == null) {
             for (i in 0 until childCount) {
                 val child = getChildAt(i)
-                if (child != mCircleView) {
+                if (child != mCircleView && child != mFooterView) {
                     mContentView = child
                     break
                 }
@@ -456,26 +460,28 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         if (mContentView == null) {
             return
         }
+        val allHeight = measuredHeight - paddingTop - paddingBottom
         mContentView?.let {
             val childLeft = paddingLeft
             val childTop = paddingTop
             val childWidth = measuredWidth - paddingLeft - paddingRight
-            val childHeight = measuredHeight - paddingTop - paddingBottom
+            val childHeight = allHeight - mFooterView.measuredHeight
             it.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
         }
-        mCircleView?.let {
+        mCircleView.let {
             val circleWidth = it.measuredWidth
             val circleHeight = it.measuredHeight
             it.layout(width / 2 - circleWidth / 2, mCurrentTargetOffsetTop,
                     width / 2 + circleWidth / 2, mCurrentTargetOffsetTop + circleHeight)
         }
-
         mFooterView.let {
-            val footerViewTop = measuredHeight - paddingTop - paddingBottom + mCurrentTargetOffsetTop
-            val footViewLeft = (width - mFooterView.measuredWidth) / 2
-            mFooterView.layout(footerViewTop,footerViewTop,footViewLeft + mFooterView.measuredWidth,footerViewTop+mFooterView.measuredHeight)
+            val childTop = measuredHeight - paddingTop - paddingBottom - mFooterView.measuredHeight
+            val childWidth = measuredWidth - paddingRight
+            LogUtil.e("childWidth  $childWidth")
+            LogUtil.e("paddingRight  $paddingRight")
+            LogUtil.e("measuredWidth  $measuredWidth")
+            it.layout(paddingLeft, childTop, childWidth, allHeight)
         }
-
     }
 
     public override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -490,9 +496,16 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
                 measuredWidth - paddingLeft - paddingRight,
                 View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(
                 measuredHeight - paddingTop - paddingBottom, View.MeasureSpec.EXACTLY))
+
         mCircleView.measure(View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY))
-        mFooterView.measure(widthMeasureSpec,heightMeasureSpec)
+
+        mFooterView.measure(View.MeasureSpec.makeMeasureSpec(
+                measuredWidth - paddingLeft - paddingRight,
+                View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.EXACTLY))
+        val height = mFooterView.height;
+        LogUtil.e("height       $height")
         mCircleViewIndex = -1
         // Get the index of the circleview.
         for (index in 0 until childCount) {
@@ -807,15 +820,15 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
             if (!mScale) {
                 listener = object : Animation.AnimationListener {
 
-                    override fun onAnimationStart(animation: Animation) {}
+                    override fun onAnimationStart(animation: Animation?) {}
 
-                    override fun onAnimationEnd(animation: Animation) {
+                    override fun onAnimationEnd(animation: Animation?) {
                         if (!mScale) {
                             startScaleDownAnimation(null)
                         }
                     }
 
-                    override fun onAnimationRepeat(animation: Animation) {}
+                    override fun onAnimationRepeat(animation: Animation?) {}
 
                 }
             }
@@ -826,7 +839,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val action = ev.actionMasked
-        var pointerIndex: Int
+        val pointerIndex: Int
 
         if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
             mReturningToStart = false
@@ -936,8 +949,8 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
             LogUtil.e("加载更多")
 //            if (mLoadMoreListener != null) {
             animateOffsetFromToTarget(mCurrentTargetOffsetTop, mCurrentTargetOffsetTop - mInitialScrollUpY, null)
-//                mLoadMoreListener.onLoad()
-//                isLoadingMore = true
+//                mLoadMoreListener?.onLoad()
+            isLoadingMore = true
 //            }
         }
     }
@@ -1008,7 +1021,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         mCircleView.startAnimation(mScaleDownToStartAnimation)
     }
 
-    internal fun setTargetOffsetTopAndBottom(offset: Int) {
+    private fun setTargetOffsetTopAndBottom(offset: Int) {
         mCircleView.bringToFront()
         ViewCompat.offsetTopAndBottom(mCircleView, offset)
         mCurrentTargetOffsetTop = mCircleView.top
@@ -1033,5 +1046,18 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         fun canChildScrollUp(parent: SuperSwipeRefreshLayout, child: View?): Boolean
     }
 
+    /**
+     * 加载更多监听器
+     */
+    interface OnLoadMoreListener {
+        fun onLoad()
+    }
+
+    /**
+     * 设置加载更多监听器
+     */
+    fun setOnLoadMoreListener(loadMoreListener: OnLoadMoreListener) {
+        mLoadMoreListener = loadMoreListener
+    }
 }
 
