@@ -1,6 +1,7 @@
 package com.zyelite.kghub.widget
 
 import android.content.Context
+import android.provider.ContactsContract
 import android.support.annotation.ColorInt
 import android.support.annotation.ColorRes
 import android.support.annotation.VisibleForTesting
@@ -8,6 +9,7 @@ import android.support.v4.content.ContextCompat
 import android.support.v4.view.*
 import android.support.v4.widget.CircularProgressDrawable
 import android.support.v4.widget.ListViewCompat
+import android.text.Layout
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -18,6 +20,7 @@ import android.view.animation.Animation
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Transformation
 import android.widget.AbsListView
+import android.widget.LinearLayout
 import android.widget.ListView
 import com.zyelite.kghub.utils.LogUtil
 
@@ -28,15 +31,16 @@ import com.zyelite.kghub.utils.LogUtil
  * @description SuperSwipeRefreshLayout
  */
 class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollingChild {
+
     // Maps to ProgressBar.Large style
-    val LARGE = CircularProgressDrawable.LARGE
+    private val LARGE = CircularProgressDrawable.LARGE
     // Maps to ProgressBar default style
-    val DEFAULT = CircularProgressDrawable.DEFAULT
+    private val DEFAULT = CircularProgressDrawable.DEFAULT
 
     @VisibleForTesting
-    internal val CIRCLE_DIAMETER = 40
+    private val CIRCLE_DIAMETER = 40
     @VisibleForTesting
-    internal val CIRCLE_DIAMETER_LARGE = 56
+    private val CIRCLE_DIAMETER_LARGE = 56
 
     private val LOG_TAG = SuperSwipeRefreshLayout::class.java.simpleName
 
@@ -132,7 +136,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
 
     private var mNotify: Boolean = false
 
-    private var  progressCircleDiameter: Int = 0
+    private var progressCircleDiameter: Int = 0
 
     // Whether the client has set a custom starting position;
     private var mUsingCustomStart: Boolean = false
@@ -468,20 +472,51 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
             val childHeight = allHeight - mFooterView.measuredHeight
             it.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
         }
+
         mCircleView.let {
             val circleWidth = it.measuredWidth
             val circleHeight = it.measuredHeight
             it.layout(width / 2 - circleWidth / 2, mCurrentTargetOffsetTop,
                     width / 2 + circleWidth / 2, mCurrentTargetOffsetTop + circleHeight)
         }
+
         mFooterView.let {
-            val childTop = measuredHeight - paddingTop - paddingBottom - mFooterView.measuredHeight
+            val childTop = allHeight - mFooterView.measuredHeight
             val childWidth = measuredWidth - paddingRight
-            LogUtil.e("childWidth  $childWidth")
-            LogUtil.e("paddingRight  $paddingRight")
-            LogUtil.e("measuredWidth  $measuredWidth")
             it.layout(paddingLeft, childTop, childWidth, allHeight)
         }
+        // ViewGroup的内边距
+//        val parentPaddingLeft = paddingLeft
+//        val parentPaddingTop = paddingTop
+//        var child: View?
+//        if (childCount > 0) {
+//            var mHeight = 0
+//            for (i in 0 until childCount) {
+//                child = getChildAt(i)
+//                if (child!=mCircleView){
+//                    //获取 LayoutParams
+//                    val lp = child.layoutParams as LayoutParams
+//                    //childView的四个顶点
+//                    val left = parentPaddingLeft + lp.leftMargin
+//                    val top = mHeight + parentPaddingTop + lp.topMargin
+//                    val right = child.measuredWidth + parentPaddingLeft + lp.leftMargin
+//                    val bottom = child.measuredHeight + mHeight + parentPaddingTop + lp.topMargin
+//
+//                    child.layout(left, top, right, bottom)
+//                    // 累加已经绘制的childView的高
+//                    mHeight += child.measuredHeight + lp.topMargin + lp.bottomMargin
+//                }else{
+//                    mCircleView.let {
+//                        val circleWidth = it.measuredWidth
+//                        val circleHeight = it.measuredHeight
+//                        it.layout(width / 2 - circleWidth / 2, mCurrentTargetOffsetTop,
+//                                width / 2 + circleWidth / 2, mCurrentTargetOffsetTop + circleHeight)
+//                    }
+//                }
+//
+//            }
+//        }
+
     }
 
     public override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -492,20 +527,83 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
         if (mContentView == null) {
             return
         }
-        mContentView!!.measure(View.MeasureSpec.makeMeasureSpec(
-                measuredWidth - paddingLeft - paddingRight,
-                View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(
-                measuredHeight - paddingTop - paddingBottom, View.MeasureSpec.EXACTLY))
+        //获取系统传递过来测量出的宽度 高度，以及相应的测量模式。
+        //如果测量模式为 EXACTLY( 确定的dp值，match_parent)，则可以调用setMeasuredDimension()设置，
+        //如果测量模式为 AT_MOST(wrap_content),则需要经过计算再去调用setMeasuredDimension()设置
+        val widthMeasure = View.MeasureSpec.getSize(widthMeasureSpec)
+        val widthMode = View.MeasureSpec.getMode(widthMeasureSpec)
+        val heightMeasure = View.MeasureSpec.getSize(heightMeasureSpec)
+        val heightMode = View.MeasureSpec.getMode(heightMeasureSpec)
+        //计算宽度 高度 //wrap_content测量模式下会使用到:
+        //存储最后计算出的宽度，
+        val maxLineWidth = 0
+        //存储最后计算出的高度
+        val totalHeight = 0
+        // 得到内部元素的个数
+        val count = childCount
+        //存储子View
+        var child: View?
+        //遍历子View 计算父控件宽高
+        var viewGroupWidth = 0
+        var viewGroupHeight = 0
+        for (i in 0 until count) {
+            child = getChildAt(i)
+            //如果gone，不测量了
+            if (View.GONE == child.visibility) {
+                continue
+            }
+            if (child != mCircleView) {
+                //先测量子View
+                measureChild(child, widthMeasureSpec, heightMeasureSpec)
+               // val params: LayoutParams = child.layoutParams as LayoutParams
+                //测量childView包含外边距
+               // measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);
+                // 计算父容器的期望值
+              //  viewGroupWidth += child.measuredWidth + params.leftMargin + params.rightMargin;
+              //  viewGroupHeight += child.measuredHeight + params.topMargin + params.bottomMargin;
+            } else {
+                mCircleView.measure(View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY))
+            }
+        }
 
-        mCircleView.measure(View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(progressCircleDiameter, View.MeasureSpec.EXACTLY))
+        // ViewGroup内边距
+      //  viewGroupWidth += paddingLeft + paddingRight
+      //  viewGroupHeight += paddingTop + paddingBottom
 
-        mFooterView.measure(View.MeasureSpec.makeMeasureSpec(
-                measuredWidth - paddingLeft - paddingRight,
-                View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.EXACTLY))
-        val height = mFooterView.height;
+        //和建议最小值进行比较
+      //  viewGroupWidth = Math.max(viewGroupWidth, suggestedMinimumWidth)
+       // viewGroupHeight = Math.max(viewGroupHeight, suggestedMinimumHeight)
+        //适配padding,如果是wrap_content,则除了子控件本身占据的控件，还要在加上父控件的padding
+      //  setMeasuredDimension(resolveSize(viewGroupWidth, widthMeasureSpec), resolveSize(viewGroupHeight, heightMeasureSpec))
+
+        setMeasuredDimension(
+                if (widthMode !== View.MeasureSpec.EXACTLY) maxLineWidth + paddingLeft + paddingRight else widthMeasure,
+                if (heightMode !== View.MeasureSpec.EXACTLY) totalHeight + paddingTop + paddingBottom else heightMeasure)
+
+
+//            mContentView!!.measure(View.MeasureSpec.makeMeasureSpec(
+//                    measuredWidth - paddingLeft - paddingRight,
+//                    View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(
+//                    measuredHeight - paddingTop - paddingBottom, View.MeasureSpec.EXACTLY))
+//
+//
+//
+//            mFooterView.measure(View.MeasureSpec.makeMeasureSpec(
+//                    measuredWidth - paddingLeft - paddingRight,
+//                    View.MeasureSpec.EXACTLY),
+//                    View.MeasureSpec.makeMeasureSpec(measuredHeight - paddingTop - paddingBottom-mContentView!!.measuredHeight, View.MeasureSpec.EXACTLY))
+
+        val height = mFooterView.height
+
+        val width = mFooterView.width
+        val width1 =  mContentView!!.width
         LogUtil.e("height       $height")
+
+        LogUtil.e("width       $width")
+
+        LogUtil.e("width1       $width1")
+
         mCircleViewIndex = -1
         // Get the index of the circleview.
         for (index in 0 until childCount) {
@@ -515,6 +613,7 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
             }
         }
     }
+
 
     /**
      * 判断view向下是否可以滑动
@@ -1059,5 +1158,45 @@ class SuperSwipeRefreshLayout : ViewGroup, NestedScrollingParent, NestedScrollin
     fun setOnLoadMoreListener(loadMoreListener: OnLoadMoreListener) {
         mLoadMoreListener = loadMoreListener
     }
+
+
+//    /**
+//     * 自定义LayoutParams
+//     */
+//    class LayoutParams : MarginLayoutParams {
+//        constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
+//        constructor(width: Int, height: Int) : super(width, height)
+//        constructor(source: ViewGroup.LayoutParams?) : super(source)
+//        constructor(source: MarginLayoutParams?) : super(source)
+//    }
+//
+//    /**
+//     *  获取默认的布局参数
+//     */
+//    override fun generateDefaultLayoutParams(): ViewGroup.LayoutParams {
+//        return LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+//    }
+//
+//    /**
+//     *  生成自己的布局参数
+//     */
+//    override fun generateLayoutParams(p: ViewGroup.LayoutParams?): ViewGroup.LayoutParams {
+//        return LayoutParams(p)
+//    }
+//
+//    /**
+//     *  获取布局文件中的布局参数
+//     */
+//    override fun generateLayoutParams(attrs: AttributeSet?): ViewGroup.LayoutParams {
+//        return LayoutParams(context, attrs)
+//    }
+//
+//
+//    /**
+//     *  检查当前布局参数是否是我们定义的类型
+//     */
+//    override fun checkLayoutParams(p: ViewGroup.LayoutParams?): Boolean {
+//        return p is LayoutParams
+//    }
 }
 
